@@ -24,7 +24,12 @@
   "komentar": "https://part-selanjutnya.github.io/Klik-disini/\nTonton selanjutnya☝️",
   "jadwal": "2026-10-27T16:24:49.375Z",
   "petugas": "Sari",
-  "status": "memproses",
+  "status": "selesai",
   "dibuat": "2026-10-27T16:24:49.378Z",
-  "mulai": "2026-10-27T16:25:01+00:00"
+  "mulai": "2026-10-27T16:25:01+00:00",
+  "video_id": "959243843925702",
+  "komentar_ok": false,
+  "komentar_galat": "{\"error\":{\"message\":\"(#200) You do not have sufficient permissions to perform this action\",\"type\":\"OAuthException\",\"code\":200,\"fbtrace_id\":\"Arg1qGOa0DHO6hIy_twII5x\"}}",
+  "catatan": "Reel tayang, tetapi komentar pertama gagal: {\"error\":{\"message\":\"(#200) You do not have sufficient permissions to perform this action\",\"type\":\"OAuthException\",\"code\":200,\"fbtrace_id\":\"Arg1qGOa0DHO6hIy_twII5x\"}}",
+  "selesai": "2026-10-27T16:27:50+00:00"
 }
