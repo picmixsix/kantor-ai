@@ -24,9 +24,6 @@
   #log b { color:var(--lamp); }
   
   /* PANEL FORMULIR AFFILIATE */
-  #btn-form { position:fixed; top:20px; right:20px; z-index:20; background:var(--brand); color:#14172b;
-    border:none; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-  
   #form-panel { position:fixed; top:0; right:-400px; width:100%; max-width:380px; height:100%; 
     background:rgba(30,35,66,0.98); z-index:30; transition:right 0.3s ease; padding:20px; overflow-y:auto; 
     border-left: 1px solid #3a416b; box-shadow: -5px 0 15px rgba(0,0,0,0.3); }
@@ -66,9 +63,6 @@
   <button class="btn-zoom" onclick="zoomCam(6)" title="Zoom Out">-</button>
 </div>
 
-<!-- TOMBOL BUKA FORM (Alternatif) -->
-<button id="btn-form" onclick="document.getElementById('form-panel').classList.add('open')">📝 Form (Atau Klik Logo FB)</button>
-
 <!-- PANEL FORMULIR SAMPING -->
 <div id="form-panel">
   <span class="close-btn" onclick="document.getElementById('form-panel').classList.remove('open')">✖ Tutup</span>
@@ -81,7 +75,7 @@
   
   <div class="form-group">
     <label>2. Deskripsi & Tagar</label>
-    <textarea placeholder="Tulis deskripsi dasar di sini..."></textarea>
+    <textarea id="descText" placeholder="Tulis deskripsi dasar di sini..."></textarea>
     <div class="checkbox-group">
       <input type="checkbox" id="autoSpin" checked>
       <label for="autoSpin">Aktifkan Auto-Spin Deskripsi</label>
@@ -117,24 +111,62 @@
     <input type="datetime-local" id="scheduleTime" style="display:none; margin-top:8px;">
   </div>
   
-  <button class="btn-submit" onclick="submitForm()">Kirim Tugas ke Server</button>
+  <button class="btn-submit" onclick="submitForm()">Kirim Tugas ke Antrean (GitHub)</button>
 </div>
 
 <div id="log"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-/* ============ LOGIKA UI FORM ============ */
+/* ============ LOGIKA UI FORM & GITHUB ISSUES ============ */
 function toggleTimeInput() {
   const type = document.getElementById("scheduleType").value;
   document.getElementById("scheduleTime").style.display = type === "cron" ? "block" : "none";
 }
 
 function submitForm() {
-  const isNow = document.getElementById("scheduleType").value === "now";
+  const gdrive = document.getElementById("gdriveLink").value || "Kosong";
+  const desc = document.getElementById("descText").value || "Kosong";
+  const spin = document.getElementById("autoSpin").checked ? "YA" : "TIDAK";
+  const tagar = document.getElementById("trendTagar").checked ? "YA" : "TIDAK";
+  const redirect = document.getElementById("redirectLink").value || "Kosong";
+  const fp = document.getElementById("fanpageSelect").value;
+  
+  const scheduleType = document.getElementById("scheduleType").value;
+  const scheduleTime = document.getElementById("scheduleTime").value || "Kosong";
+  
+  const isNow = (scheduleType === "now");
+  const label = isNow ? "upload-sekarang" : "antrean";
+  const waktuTarget = isNow ? "SEKARANG" : scheduleTime;
+  const judul = `[${fp.toUpperCase()}] Upload Reels - ${waktuTarget}`;
+
+  const bodyData = `Tugas baru untuk divisi affiliate! Berikut detailnya:
+
+\`\`\`json
+{
+  "fanpage": "${fp}",
+  "gdrive_link": "${gdrive}",
+  "deskripsi": "${encodeURIComponent(desc)}",
+  "auto_spin": "${spin}",
+  "trending_tagar": "${tagar}",
+  "redirect_link": "${redirect}",
+  "jadwal": "${waktuTarget}"
+}
+\`\`\``;
+
+  // Akun GitHub Anda sesuai screenshot
+  const githubUser = "picmixsix"; 
+  const githubRepo = "kantor-ai"; 
+  
+  const issueUrl = `https://github.com/${githubUser}/${githubRepo}/issues/new?title=${encodeURIComponent(judul)}&body=${encodeURIComponent(bodyData)}&labels=${label}`;
+
   document.getElementById('form-panel').classList.remove('open');
-  log("Sistem", isNow ? "Memicu bot untuk UPLOAD SEKARANG..." : "Data disimpan ke ANTREAN PENDING.");
-  say(AGENTS[1], isNow ? "Menerima perintah upload instan!" : "Menyusun jadwal cron job baru.");
+  log("Sistem", isNow ? "Mengarahkan ke pembuatan task Instan..." : "Mengarahkan ke pembuatan task Antrean...");
+  say(AGENTS[1], "Siap komandan! Buka lembar tugas (Issue).");
+  
+  setTimeout(() => {
+    window.open(issueUrl, "_blank");
+  }, 1000);
 }
 
 /* ============ 1. PENGATURAN AGENT ============ */
@@ -221,7 +253,7 @@ AGENTS.forEach(a => {
   box(2.6,.04,1.8,a.color,x,.03,z+.5).material.setValues({transparent:true,opacity:.3});
 });
 
-// Pembuatan Karakter 3D (disederhanakan untuk kode)
+// Pembuatan Karakter 3D
 function ball(r, c, x, y, z, sx=1, sy=1, sz=1){
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), smooth(c));
   m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.castShadow = true; return m;
@@ -252,44 +284,36 @@ function makeAgent(a){
 AGENTS.forEach(makeAgent);
 
 /* ============ 4. LOGO FACEBOOK MELAYANG & INTERAKTIF ============ */
-// 1. Buat tekstur logo FB menggunakan HTML Canvas
 function createFBTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 256;
   const ctx = canvas.getContext('2d');
-  // Background Biru FB
   ctx.fillStyle = "#1877F2";
   ctx.beginPath(); ctx.roundRect(0, 0, 256, 256, 40); ctx.fill();
-  // Huruf 'f' putih
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 200px Arial, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText("f", 145, 145); 
   return new THREE.CanvasTexture(canvas);
 }
-// 2. Buat objek 3D kotak dengan tekstur FB
 const fbGeo = new THREE.BoxGeometry(2, 2, 0.3);
 const fbMat = new THREE.MeshStandardMaterial({ map: createFBTexture(), roughness:0.2, metalness:0.1 });
 const fbLogo = new THREE.Mesh(fbGeo, fbMat);
-fbLogo.position.set(0, 6, 0); // Melayang di atas (Y = 6)
+fbLogo.position.set(0, 6, 0); 
 scene.add(fbLogo);
 
-// 3. Logika Raycaster (Klik/Tap Logo)
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let startClickPos = null;
 
-// Deteksi saat mouse/jari menekan layar
 renderer.domElement.addEventListener('pointerdown', (e) => {
   startClickPos = { x: e.clientX, y: e.clientY };
 });
 
-// Deteksi saat dilepas (memastikan pengguna mengklik, bukan menggeser layar)
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (startClickPos) {
     const dx = e.clientX - startClickPos.x;
     const dy = e.clientY - startClickPos.y;
-    // Jika pergerakan kurang dari 10px, anggap sebagai "Klik"
     if (Math.sqrt(dx*dx + dy*dy) < 10) {
       pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
       pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -303,7 +327,6 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   startClickPos = null;
 });
 
-// Ubah kursor jadi "pointer" (tangan) saat mengarahkan mouse ke logo
 renderer.domElement.addEventListener('pointermove', (e) => {
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -311,7 +334,6 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   const intersects = raycaster.intersectObject(fbLogo);
   document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
 });
-
 
 /* ============ 5. KAMERA & KONTROL ZOOM ============ */
 let yaw = 0.5, pitch = 0.7, dist = 28, drag = null;
@@ -333,21 +355,18 @@ addEventListener("pointermove", e => {
   if (!pts.has(e.pointerId)) return;
   pts.set(e.pointerId, e);
   
-  // Deteksi Cubit Layar (Pinch to Zoom) untuk HP
   if (pts.size === 2) {
     const arr = Array.from(pts.values());
     const d = Math.hypot(arr[0].clientX - arr[1].clientX, arr[0].clientY - arr[1].clientY);
-    if (prevPinchDist !== null) zoomCam((prevPinchDist - d) * 0.1); // Zoom in/out via pinch
+    if (prevPinchDist !== null) zoomCam((prevPinchDist - d) * 0.1); 
     prevPinchDist = d;
   } 
-  // Deteksi Geser (Putar Kamera)
   else if (drag && pts.size === 1) {
     yaw -= (e.clientX - drag.x) * 0.006;
     pitch = Math.min(1.2, Math.max(.15, pitch + (e.clientY - drag.y) * 0.004));
     drag = {x:e.clientX, y:e.clientY};
   }
 });
-// Deteksi Scroll Mouse (Zoom)
 renderer.domElement.addEventListener("wheel", e => { zoomCam(e.deltaY * 0.03); });
 
 function resize(){
@@ -356,7 +375,6 @@ function resize(){
   camera.updateProjectionMatrix();
 }
 addEventListener("resize", resize); resize();
-
 
 /* ============ 6. LOG & GELEMBUNG ============ */
 const logEl = document.getElementById("log");
@@ -370,7 +388,6 @@ function say(a, text, ms=3000){
   clearTimeout(a.bt); a.bt = setTimeout(() => a.bubble.classList.remove("on"), ms);
 }
 
-
 /* ============ 7. LOOP ANIMASI UTAMA ============ */
 const clock = new THREE.Clock();
 function setPath(a, pts){ a.path = pts.map(p => new THREE.Vector3(p[0], 0, p[1])); }
@@ -381,11 +398,9 @@ function loop(){
   const dt = Math.min(clock.getDelta(), .05);
   const t = clock.elapsedTime;
   
-  // Animasi Logo FB Melayang & Berputar lambat
   fbLogo.position.y = 5.5 + Math.sin(t * 2) * 0.3;
   fbLogo.rotation.y += dt * 0.5;
 
-  // Animasi Agent Bekerja
   AGENTS.forEach(a => {
     if (a.state === "work") {
       a.body.rotation.z = Math.sin(t*6)*.03;
@@ -426,20 +441,18 @@ function loop(){
     a.armR.rotation.x = wk ? -sw : (a.state==="work" ? ty + Math.sin(t*16+2)*.15 : 0);
     a.legL.rotation.x = -sw; a.legR.rotation.x = sw;
     
-    // Bubble UI Posisi
     v.copy(a.mesh.position); v.y = 2.9; v.project(camera);
     a.bubble.style.left = ((v.x+1)/2*innerWidth) + "px";
     a.bubble.style.top  = ((1-v.y)/2*innerHeight) + "px";
   });
   
-  // Update Posisi Kamera
   camera.position.set(Math.sin(yaw)*Math.cos(pitch)*dist, Math.sin(pitch)*dist, Math.cos(yaw)*Math.cos(pitch)*dist);
   camera.lookAt(0, 1, 0);
   renderer.render(scene, camera);
 }
 
 log("Sistem", "Logo Facebook melayang telah diaktifkan.");
-log("Petunjuk", "Klik Logo FB atau tombol form untuk memberi tugas.");
+log("Petunjuk", "Klik/Tap Logo FB untuk memberi tugas.");
 loop();
 </script>
 </body>
