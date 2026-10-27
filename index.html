@@ -3,62 +3,152 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Kantor Virtual 3D</title>
+<title>Dasbor Virtual - Divisi Affiliate FB</title>
 <style>
-  :root { --bg:#9fd6a4; --panel:#1e2342; --ink:#eef0ff; --muted:#9aa0c8; --lamp:#ffb454; }
+  :root { --bg:#9fd6a4; --panel:#1e2342; --ink:#eef0ff; --muted:#9aa0c8; --lamp:#ffb454; --brand:#3ddcc5;}
   * { box-sizing: border-box; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
     font-family: "Trebuchet MS", "Segoe UI", sans-serif; overflow:hidden; }
   #scene { position:fixed; inset:0; touch-action:none; }
-  .bubble { position:fixed; left:0; top:0; max-width:170px; padding:6px 10px; border-radius:12px;
-    background:var(--ink); color:#14172b; font-size:12px; line-height:1.3; pointer-events:none;
-    transform:translate(-50%,-100%); opacity:0; transition:opacity .25s; }
+  
+  /* UI BUBBLE & LOG */
+  .bubble { position:fixed; left:0; top:0; max-width:180px; padding:8px 12px; border-radius:12px;
+    background:rgba(255,255,255,0.95); color:#14172b; font-size:12px; line-height:1.4; font-weight:bold; pointer-events:none;
+    transform:translate(-50%,-100%); opacity:0; transition:opacity .25s; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
   .bubble.on { opacity:1; }
-  #log { position:fixed; left:0; right:0; bottom:0; max-height:28%; overflow-y:auto;
+  
+  #log { position:fixed; left:0; right:0; bottom:0; max-height:20%; overflow-y:auto;
     padding:10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
-    background:rgba(30,35,66,.92); font-size:13px; line-height:1.5; }
+    background:rgba(30,35,66,.92); font-size:13px; line-height:1.5; z-index: 10; border-top: 2px solid var(--brand); }
   #log p { margin:0 0 4px; color:var(--muted); }
   #log b { color:var(--lamp); }
-  #title { position:fixed; top:env(safe-area-inset-top, 0px); left:0; padding:12px 14px;
-    font-size:14px; color:#1e2342; pointer-events:none; }
+  
+  /* PANEL FORMULIR AFFILIATE */
+  #btn-form { position:fixed; top:20px; right:20px; z-index:20; background:var(--brand); color:#14172b;
+    border:none; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+  
+  #form-panel { position:fixed; top:0; right:-400px; width:100%; max-width:380px; height:100%; 
+    background:rgba(30,35,66,0.98); z-index:30; transition:right 0.3s ease; padding:20px; overflow-y:auto; 
+    border-left: 1px solid #3a416b; box-shadow: -5px 0 15px rgba(0,0,0,0.3); }
+  #form-panel.open { right: 0; }
+  
+  .close-btn { color:#ff7a59; cursor:pointer; font-weight:bold; float:right; font-size:16px; }
+  #form-panel h2 { margin-top:0; font-size:18px; color:var(--brand); border-bottom:1px solid #3a416b; padding-bottom:10px;}
+  
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:8px; border-radius:6px; 
+    border:1px solid #4a5482; background:#14172b; color:#fff; font-family:inherit; font-size:13px; }
+  .form-group textarea { resize:vertical; min-height:60px; }
+  .checkbox-group { display:flex; align-items:center; gap:8px; font-size:13px; margin-top:5px; color:#fff;}
+  
+  .btn-submit { width:100%; background:var(--brand); color:#14172b; border:none; padding:10px; 
+    border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px; }
+  .btn-submit:hover { background:#2bbfa8; }
+
+  #title { position:fixed; top:20px; left:20px; font-size:16px; font-weight:bold; background:rgba(255,255,255,0.8); 
+    padding:8px 12px; border-radius:8px; color:#1e2342; pointer-events:none; z-index: 10;}
 </style>
 </head>
 <body>
 <div id="scene"></div>
-<div id="title">Seret layar untuk memutar kantor</div>
+<div id="title">🏢 Divisi Affiliate Facebook (Auto Uploader)</div>
+
+<!-- TOMBOL BUKA FORM -->
+<button id="btn-form" onclick="document.getElementById('form-panel').classList.add('open')">📝 Buka Form Upload</button>
+
+<!-- PANEL FORMULIR SAMPING -->
+<div id="form-panel">
+  <span class="close-btn" onclick="document.getElementById('form-panel').classList.remove('open')">✖ Tutup</span>
+  <h2>Form Auto Uploader Reels</h2>
+  
+  <div class="form-group">
+    <label>1. Link Video GDrive (Publik)</label>
+    <input type="url" placeholder="https://drive.google.com/file/d/..." id="gdriveLink">
+  </div>
+  
+  <div class="form-group">
+    <label>2. Deskripsi & Tagar</label>
+    <textarea placeholder="Tulis deskripsi dasar di sini..."></textarea>
+    <div class="checkbox-group">
+      <input type="checkbox" id="autoSpin" checked>
+      <label for="autoSpin">Aktifkan Auto-Spin Deskripsi (Anti-Spam)</label>
+    </div>
+    <div class="checkbox-group">
+      <input type="checkbox" id="trendTagar" checked>
+      <label for="trendTagar">Sisipkan Tagar Trending Terkini</label>
+    </div>
+  </div>
+  
+  <div class="form-group">
+    <label>3. Link Redirect (Shopee Affiliate)</label>
+    <input type="url" placeholder="https://shope.ee/..." id="redirectLink">
+  </div>
+  
+  <div class="form-group">
+    <label>4. Pilih Akun Fanpage</label>
+    <select id="fanpageSelect">
+      <option value="fp1">Fanpage 1 (Racun Shopee Indo)</option>
+      <option value="fp2">Fanpage 2 (Promo Diskon Gila)</option>
+      <option value="fp3">Fanpage 3 (Gadget & Elektronik Murah)</option>
+      <option value="fp4">Fanpage 4 (Fashion Wanita OOTD)</option>
+      <option value="fp5">Fanpage 5 (Perabotan Estetik)</option>
+    </select>
+    <a href="#" style="color:var(--brand); font-size:11px; display:block; margin-top:5px;">+ Kelola Daftar Akun Fanpage</a>
+  </div>
+  
+  <div class="form-group">
+    <label>5. Jadwal Upload</label>
+    <select id="scheduleType" onchange="toggleTimeInput()">
+      <option value="now">Upload Sekarang (Trigger Bot)</option>
+      <option value="cron">Jadwalkan Nanti (Masuk Antrean/Cron)</option>
+    </select>
+    <input type="datetime-local" id="scheduleTime" style="display:none; margin-top:8px;">
+  </div>
+  
+  <button class="btn-submit" onclick="submitForm()">Kirim Tugas ke Server</button>
+</div>
+
 <div id="log"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-/* ============ 1. PENGATURAN AGENT ============ */
-// Ubah nama, peran, warna, dan daftar tugas sesuka Anda.
-const AGENTS = [
-  { name:"Sari",  role:"Penulis caption", color:0x3ddcc5, desk:[4.5, -4.4], route:[[1.7,-3.3],[1.7,1.1],[3.6,1.1]],
-    outfit:0x8a8f9c, bottom:0x6a6f7c, style:"cepol",   // baju abu-abu + rambut cepol dengan helai pink
-    tasks:["Menulis caption untuk produk baru", "Merapikan hashtag", "Menyusun 3 variasi hook"] },
-  { name:"Budi",  role:"Pencari produk",  color:0xff7a59, desk:[-5, 4.3], route:[[-2.8,5.4],[-2.8,1.1],[5.4,1.1]], outfit:0xff9a6c, bottom:0x5b7fb5, hair:0x2b1d14,
-    tasks:["Mencari produk yang sedang naik", "Membandingkan harga", "Mengecek rating penjual"] }
-];
-const BOARD = [4.5, 0.3];  // posisi papan laporan di tengah ruangan
-
-/* ============ 2. OTAK AGENT ============ */
-// Sekarang masih simulasi. Untuk AI sungguhan, ganti isi fungsi ini dengan
-// pemanggilan ke backend Anda (Cloudflare Workers / Vercel), JANGAN taruh API key di sini.
-async function agentThink(agent, task) {
-  // contoh nanti:
-  // const r = await fetch("https://nama-worker-anda.workers.dev", {
-  //   method:"POST", body: JSON.stringify({ agent: agent.name, task })
-  // });
-  // return (await r.json()).text;
-  await new Promise(r => setTimeout(r, 800));
-  return "Selesai: " + task.toLowerCase();
+/* ============ LOGIKA UI FORM ============ */
+function toggleTimeInput() {
+  const type = document.getElementById("scheduleType").value;
+  document.getElementById("scheduleTime").style.display = type === "cron" ? "block" : "none";
 }
 
-/* ============ 3. SCENE ============ */
+function submitForm() {
+  const isNow = document.getElementById("scheduleType").value === "now";
+  document.getElementById('form-panel').classList.remove('open');
+  log("Sistem", isNow ? "Memicu bot untuk UPLOAD SEKARANG..." : "Data disimpan ke ANTREAN PENDING.");
+  say(AGENTS[1], isNow ? "Menerima perintah upload instan!" : "Menyusun jadwal cron job baru.");
+}
+
+/* ============ 1. PENGATURAN AGENT DIVISI AFFILIATE ============ */
+const AGENTS = [
+  { name:"Sari (Copywriter)", role:"Manajer Konten", color:0x3ddcc5, desk:[0, -2], route:[[-2,-2],[-2,1],[3,1]],
+    outfit:0x8a8f9c, bottom:0x6a6f7c, style:"cepol",
+    tasks:["Mengambil video dari GDrive", "Melakukan spin deskripsi anti-spam", "Menyisipkan tagar trending"] },
+  { name:"Budi (Uploader)", role:"Admin Bot & Jadwal", color:0xff7a59, desk:[-4, 2], route:[[-2,2],[-2,1],[3,1]], outfit:0xff9a6c, bottom:0x5b7fb5, hair:0x2b1d14,
+    tasks:["Menjalankan Cron Job antrean", "Push video ke Fanpage FB", "Memeriksa status publikasi"] },
+  { name:"Citra (Account)", role:"Manajer Fanpage", color:0xc6b8ea, desk:[-4, -2], route:[[-2,-2],[-2,1],[3,1]], outfit:0xa8dcc8, bottom:0x4a5a8a,
+    tasks:["Mengecek kesehatan 5 Fanpage", "Menyematkan Link Redirect di komentar", "Mengelola daftar akun kelola"] }
+];
+const BOARD = [4.5, 0.3];
+
+/* ============ 2. OTAK AGENT (Simulasi) ============ */
+async function agentThink(agent, task) {
+  await new Promise(r => setTimeout(r, 1500));
+  return "Selesai: " + task;
+}
+
+/* ============ 3. SCENE 3D TEMA KANTOR MODERN ============ */
 const host = document.getElementById("scene");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xa9dba0);
-const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 120);
+scene.background = new THREE.Color(0x1a1e36); // Background lebih gelap agar kontras
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 120);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -66,16 +156,11 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 host.appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9a7a, 0.7));
-// matahari: bayangan lembut jatuh ke kanan-belakang
 const sun = new THREE.DirectionalLight(0xfff0d4, 0.85);
 sun.position.set(-9, 18, 11); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006;
 Object.assign(sun.shadow.camera, { left:-15, right:15, top:15, bottom:-15, near:1, far:60 });
 scene.add(sun);
-// lampu hangat di dalam ruangan (tanpa bayangan, ringan)
-[[-4,3,-3],[4.5,3,2],[4.5,3,-4],[-5,3,4]].forEach(p => {
-  const l = new THREE.PointLight(0xffc98a, 0.45, 11); l.position.set(...p); scene.add(l);
-});
 
 const smooth = (c) => new THREE.MeshStandardMaterial({ color:c, roughness:.6 });
 const mat = (c) => new THREE.MeshStandardMaterial({ color:c, flatShading:true, roughness:.9 });
@@ -84,112 +169,65 @@ function box(w,h,d,c,x,y,z){
   m.position.set(x,y,z); m.castShadow = m.receiveShadow = true; scene.add(m); return m;
 }
 
-// ===== denah kantor (potongan atas, seperti rumah mini) =====
-const GREEN=0x9db89b, WOOD=0xdcae74;
-
 function cyl(r,h,c,x,y,z){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,18),smooth(c)); m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; scene.add(m); return m; }
 function plant(x,z,k=1){ cyl(.22*k,.35*k,0xc9835a,x,.17*k,z); const l=new THREE.Mesh(new THREE.SphereGeometry(.42*k,12,10),smooth(0x62b36a)); l.position.set(x,.75*k,z); l.scale.y=1.2; l.castShadow=true; scene.add(l); }
-// ---- tekstur & bayangan palsu (contact shadow) ----
-function woodTex(rx, ry, base){
-  const c = document.createElement("canvas"); c.width = c.height = 256;
-  const g = c.getContext("2d"); g.fillStyle = base; g.fillRect(0,0,256,256);
-  for (let i = 0; i < 8; i++) {
-    g.fillStyle = "rgba(" + (i%2 ? "255,235,200" : "70,40,10") + "," + (0.05 + Math.random()*.08) + ")";
-    g.fillRect(0, i*32, 256, 32);
-    g.fillStyle = "rgba(60,30,5,.35)"; g.fillRect(0, i*32, 256, 2);              // celah papan
-    g.fillStyle = "rgba(60,30,5,.3)"; g.fillRect(Math.random()*256, i*32, 2, 32);  // sambungan
-    for (let k = 0; k < 6; k++) { g.fillStyle = "rgba(90,50,15,.07)"; g.fillRect(0, i*32 + Math.random()*30, 256, 1); }
-  }
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
-  t.anisotropy = 4; return t;
-}
-const aoCanvas = document.createElement("canvas"); aoCanvas.width = aoCanvas.height = 64;
-(function(){ const g = aoCanvas.getContext("2d"), r = g.createRadialGradient(32,32,6,32,32,32);
-  r.addColorStop(0,"rgba(30,20,10,.55)"); r.addColorStop(1,"rgba(30,20,10,0)");
-  g.fillStyle = r; g.fillRect(0,0,64,64); })();
-const aoTex = new THREE.CanvasTexture(aoCanvas);
-function aoMesh(w, d){
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d),
-    new THREE.MeshBasicMaterial({ map:aoTex, transparent:true, depthWrite:false }));
-  m.rotation.x = -Math.PI/2; return m;
-}
-function ao(x, z, w, d){ const m = aoMesh(w, d); m.position.set(x, .02, z); scene.add(m); }
-function lampFloor(x, z, pl){
-  cyl(.05, 1.4, 0x6b5a48, x, .7, z);
-  const b = new THREE.Mesh(new THREE.SphereGeometry(.24, 14, 10),
-    new THREE.MeshStandardMaterial({ color:0xfff0c8, emissive:0xffc66e, emissiveIntensity:1 }));
-  b.position.set(x, 1.55, z); scene.add(b); ao(x, z, 1, 1);
-  if (pl) { const l = new THREE.PointLight(0xffc680, .6, 9); l.position.set(x, 1.6, z); scene.add(l); }
-}
-function wall(x1,z1,x2,z2,h,c=GREEN){
+
+// Lantai Khusus Divisi Affiliate
+box(14,.2,10,0xe8c594,0,-.1,0); 
+
+// Dinding Ruangan Besar (Divisi Khusus)
+const WALL_COLOR = 0xcfe6e2;
+function wall(x1,z1,x2,z2,h,c=WALL_COLOR){
   const horiz = z1===z2, len = Math.abs(horiz? x2-x1 : z2-z1);
   const cx=(x1+x2)/2, cz=(z1+z2)/2;
   box(horiz?len:.2, h, horiz?.2:len, c, cx, h/2, cz);
-  box(horiz?len:.26, .06, horiz?.26:len, 0xffffff, cx, h+.03, cz);   // tepi putih
+  box(horiz?len:.26, .06, horiz?.26:len, 0x4a5482, cx, h+.03, cz); // lis atas gelap
 }
-box(50,.1,40,0x93cf95,0,-.25,0);          // rumput
-box(16,.2,12,0xffffff,0,-.1,0).material.map = woodTex(4, 3, "#e8c594");               // lantai utama
-box(7,.22,3,0xffffff,4.5,-.09,4.5).material.map = woodTex(3, 1.4, "#b98550");       // dek balkon
-// dinding luar & sekat, warna pastel per ruangan
-const MINT=0xa8dcc8, PINK=0xf4b9c8, LILAC=0xc6b8ea, BUTTER=0xf8e6a0;
 function glass(x1,z1,x2,z2,h){
   const horiz=z1===z2, len=Math.abs(horiz?x2-x1:z2-z1), cx=(x1+x2)/2, cz=(z1+z2)/2;
-  const m=box(horiz?len:.06,h,horiz?.06:len,0xcfeaf5,cx,h/2,cz);
-  m.material.setValues({transparent:true,opacity:.35}); m.castShadow=false;
+  const m=box(horiz?len:.06,h,horiz?.06:len,0x89cbed,cx,h/2,cz);
+  m.material.setValues({transparent:true,opacity:.4}); m.castShadow=false;
   box(horiz?len:.12,.06,horiz?.12:len,0xffffff,cx,h+.03,cz);
 }
-wall(-8,-6,.5,-6,3.2,MINT); wall(.5,-6,8,-6,3.2,PINK);
-wall(-8,-6,-8,-1,3.2,MINT); wall(-8,-1,-8,2.5,3.2,LILAC); wall(-8,2.5,-8,6,3.2,BUTTER);
-wall(-8,6,.8,6,.6,BUTTER); glass(1,6,8,6,.9); glass(8,3,8,6,.9);
-wall(.5,-6,.5,-1,1.3,PINK); wall(.5,-1,1,-1,1.3,PINK); wall(2.5,-1,8,-1,1.3,PINK);
-wall(-8,-1,-6,-1,1.3,LILAC); wall(-4.5,-1,-3.5,-1,1.3,LILAC); wall(-3.5,-1,-3.5,2.5,1.3,LILAC);
-wall(-8,2.5,-3.6,2.5,1.3,BUTTER); wall(-2,2.5,-2,6,1.3,BUTTER);
 
-// pantry + meja makan (kiri atas)
-box(5,.9,.8,0xf2efe8,-4.5,.45,-5.5); box(5,.08,.9,0xe9e4da,-4.5,.94,-5.5);
-box(.9,1.9,.8,0xb5bcc4,-1.2,.95,-5.5);
-cyl(.9,.1,0xe0b57c,-4,.75,-3); cyl(.12,.7,0x8a6a4a,-4,.35,-3);
-[[-4,-4.1],[-4,-1.9],[-5.1,-3],[-2.9,-3]].forEach(c=>box(.5,.55,.5,0x9fd8d0,c[0],.3,c[1]));
-// ruang arsip: rak server
-box(.8,1.8,.7,0x7a6fb0,-7.2,.9,-.3); box(.8,1.8,.7,0x7a6fb0,-6.2,.9,-.3);
-box(.5,.06,.02,0x7dffb0,-7.2,1.5,.07).material.emissive=new THREE.Color(0x7dffb0); plant(-4.3,1.8);
-// ruang tamu / lounge + papan laporan
-box(3.4,.04,2.2,0xcfe6e2,4.5,.03,2); box(1.4,.4,.8,0xe0b57c,4.5,.2,2);
-box(2.6,.55,.9,0xf29db3,6.9,.3,1.2).rotation.y=-Math.PI/2; box(.3,.55,.9,0xe5859f,7.5,.55,1.2);
-box(2.4,.9,.1,0xf3efe4,BOARD[0],1.1,BOARD[1]); plant(7.3,-.2,1.3);
-// balkon
-[[3,4.8],[6,4.8]].forEach(c=>box(.9,.5,.9,0xf3efe4,c[0],.3,c[1])); plant(1.6,5.4,1.2); plant(7.4,3.6,1.3);
+// Membangun ruangan kotak besar
+wall(-7,-5, 7,-5, 2.5); // Tembok belakang
+wall(-7,-5, -7,5, 2.5); // Tembok kiri
+wall(-7,5, -3,5, 2.5);  // Tembok depan (kiri)
+glass(-3,5, 7,5, 2.5);  // Kaca depan (kanan)
+wall(7,-5, 7,-1, 2.5);  // Tembok kanan
+glass(7,-1, 7,5, 2.5);  // Kaca kanan
 
+// Papan Dashboard Analitik Fanpage di tembok kanan
+box(.1, 1.4, 2.4, 0x1e2342, 6.9, 1.3, -2.5); // Layar gelap
+box(.11, 1.2, 2.2, 0x3ddcc5, 6.9, 1.3, -2.5).material.setValues({emissive:0x3ddcc5, emissiveIntensity:0.3}); // Grafis nyala
 
-// jendela, tirai, rak, lampu, tanaman, bayangan kontak
-function windowAt(x, w){
-  box(w+.3,1.5,.06,0xf6f3ea,x,2.1,-5.9);
-  const gl = box(w,1.2,.04,0xd7efff,x,2.1,-5.86);
-  gl.material.emissive = new THREE.Color(0xbfe4ff); gl.material.emissiveIntensity = .9;
-}
-windowAt(-4.5, 2); windowAt(4.5, 1.6);
-box(.5,2,.14,0xf6f1ea,3.2,1.7,-5.8); box(.5,2,.14,0xf6f1ea,5.8,1.7,-5.8);   // tirai hijau
-box(1.8,1.8,.45,0xe0b57c,2,.9,-5.7); box(1.5,.22,.05,0xe57c5c,2,1.35,-5.46); box(1.5,.22,.05,0x5c9de5,2,.8,-5.46);
-box(.8,.6,.05,0xf3efe4,-7.9,2.1,-3).rotation.y = Math.PI/2;                // bingkai di dinding kiri
-lampFloor(7.3,-5.3,true); lampFloor(-7.3,3.4,true);
-plant(-7.4,-5.4,1.2); plant(-1.7,-1.7); plant(1.4,2.2); plant(-7.4,5.2,1.1);
-ao(-4.5,-5.2,6.2,2); ao(-1.2,-5.2,1.8,1.8); ao(-4,-3,3.4,3.2);
-ao(-6.7,-.1,3,1.9); ao(6.8,1.2,1.8,3.6); ao(4.5,2,2.8,1.8); ao(2,-5.3,2.6,1.6);
-ao(4.5,-4.2,3.6,2.4); ao(-5,4.4,3.6,2.4); ao(4.5,.35,3,1);
+// Rak Server / Mesin Bot Uploader di tembok kiri
+box(1.2, 2, .8, 0x4a5482, -6.2, 1, -4);
+box(.8, .1, .6, 0x14172b, -6.2, 1.5, -4); // Celah server
+box(.1, .05, .05, 0xffb454, -5.8, 1.5, -4).material.setValues({emissive:0xffb454}); // Lampu indikator bot
 
-// meja + monitor tiap agent
+// Dekorasi Tanaman
+plant(-6, 4, 1.2); plant(6, 4, 1.2); plant(-6,-4, 1.5);
+
+// Meja tiap agent (Setup PC Ganda untuk produktivitas)
 AGENTS.forEach(a => {
   const [x,z] = a.desk;
-  box(2.2,.15,1.1,0xe0b57c,x,.9,z);
-  box(.12,.9,.12,0xb98550,x-.9,.45,z-.4); box(.12,.9,.12,0xb98550,x+.9,.45,z-.4);
-  box(.12,.9,.12,0xb98550,x-.9,.45,z+.4); box(.12,.9,.12,0xb98550,x+.9,.45,z+.4);
-  box(.9,.6,.08,0x0e1020,x,1.45,z-.3);
-  const glow = box(.8,.5,.02,a.color,x,1.45,z-.25);
-  glow.material.emissive = new THREE.Color(a.color); glow.material.emissiveIntensity = .6;
-  box(2.6,.04,1.8,a.color,x,.03,z+.5).material.setValues({transparent:true,opacity:.5});   // karpet
+  box(2.2,.15,1.1,0xfcfcfc,x,.9,z); // Meja putih modern
+  box(.12,.9,.12,0x333333,x-.9,.45,z-.4); box(.12,.9,.12,0x333333,x+.9,.45,z-.4);
+  box(.12,.9,.12,0x333333,x-.9,.45,z+.4); box(.12,.9,.12,0x333333,x+.9,.45,z+.4);
+  
+  // Monitor Ganda
+  box(.9,.6,.08,0x0e1020,x-0.5,1.45,z-.3).rotation.y = Math.PI/12;
+  box(.9,.6,.08,0x0e1020,x+0.5,1.45,z-.3).rotation.y = -Math.PI/12;
+  
+  const glow = box(.8,.5,.02,a.color,x-0.5,1.45,z-.26);
+  glow.material.emissive = new THREE.Color(a.color); glow.material.emissiveIntensity = .5; glow.rotation.y = Math.PI/12;
+  
+  box(2.6,.04,1.8,a.color,x,.03,z+.5).material.setValues({transparent:true,opacity:.3});
 });
 
-// karakter 3D semi-realistis bergaya game simulasi kehidupan: kepala, badan, tangan & kaki bergerak
+// Karakter 3D
 function ball(r, c, x, y, z, sx=1, sy=1, sz=1){
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), smooth(c));
   m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.castShadow = true; return m;
@@ -207,36 +245,29 @@ function makeAgent(a){
   a.armL = mk(-.3,1.15,top,.5,.06); a.armR = mk(.3,1.15,top,.5,.06);
   a.legL = mk(-.1,.6,bot,.52,.085); a.legR = mk(.1,.6,bot,.52,.085);
   [a.armL,a.armR].forEach(p => p.add(ball(.07,skin,0,-.52,0)));
-  [a.legL,a.legR].forEach(p => p.add(ball(.1,0xf3efe4,0,-.54,.04,1,.6,1.4)));
+  [a.legL,a.legR].forEach(p => p.add(ball(.1,0x333,0,-.54,.04,1,.6,1.4))); // sepatu gelap
   [-1,1].forEach(s => {
-    g.add(ball(.05,0x1b1420,s*.13,1.57,.315));                   // mata
-    g.add(ball(.055,0xf5a3a3,s*.2,1.45,.28,1,.7,.5));            // pipi
+    g.add(ball(.05,0x1b1420,s*.13,1.57,.315));
+    g.add(ball(.055,0xf5a3a3,s*.2,1.45,.28,1,.7,.5));
   });
-  g.add(ball(.035,0xd97a7a,0,1.43,.32,1.6,.7,.5));               // mulut
-  const hairMat = smooth(a.hair || 0x3a2a22);
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(.375, 20, 14, 0, Math.PI*2, 0, Math.PI*.56), hairMat);
+  g.add(ball(.035,0xd97a7a,0,1.43,.32,1.6,.7,.5));
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(.375, 20, 14, 0, Math.PI*2, 0, Math.PI*.56), smooth(a.hair || 0x3a2a22));
   cap.position.set(0, 1.58, -.06); cap.castShadow = true; g.add(cap);
-  if (a.style === "cepol") {
-    g.add(ball(.15, a.hair || 0x2a1f22, 0, 1.98, -.08));         // cepol
-    [-1,1].forEach(s => g.add(ball(.045,0xe8788f,s*.33,1.45,.08,1,3.4,1)));  // helai pink
-  }
-  const sh = aoMesh(1.4, 1.4); sh.position.y = .02; g.add(sh);
+  
   const dia = new THREE.Mesh(new THREE.OctahedronGeometry(.16, 0), new THREE.MeshStandardMaterial({
     color:a.color, emissive:a.color, emissiveIntensity:.7, roughness:.3 }));
   dia.scale.y = 1.5; dia.position.y = 2.4; g.add(dia); a.diamond = dia;
 
-  g.position.set(a.desk[0], 0, a.desk[1] + 1.1);
-  scene.add(g);
+  g.position.set(a.desk[0], 0, a.desk[1] + 1.1); scene.add(g);
   a.mesh = g; a.body = torso; a.state = "work"; a.timer = 2 + Math.random()*2;
-  a.home = new THREE.Vector3(a.desk[0], 0, a.desk[1] + 1.1);
-  a.target = null; a.taskIdx = 0;
+  a.home = new THREE.Vector3(a.desk[0], 0, a.desk[1] + 1.1); a.path = [];
   const bb = document.createElement("div"); bb.className = "bubble"; document.body.appendChild(bb);
   a.bubble = bb;
 }
 AGENTS.forEach(makeAgent);
 
-/* ============ 4. KAMERA (putar dengan geser) ============ */
-let yaw = 0.78, pitch = 0.6, dist = 32, drag = null;
+/* ============ 4. KAMERA INTERAKTIF ============ */
+let yaw = 0.5, pitch = 0.7, dist = 22, drag = null;
 const pts = new Map();
 renderer.domElement.addEventListener("pointerdown", e => { drag = {x:e.clientX, y:e.clientY}; pts.set(e.pointerId, e); });
 addEventListener("pointerup", e => { drag = null; pts.delete(e.pointerId); });
@@ -246,26 +277,24 @@ addEventListener("pointermove", e => {
   pitch = Math.min(1.2, Math.max(.15, pitch + (e.clientY - drag.y) * 0.004));
   drag = {x:e.clientX, y:e.clientY};
 });
-renderer.domElement.addEventListener("wheel", e => { dist = Math.min(60, Math.max(18, dist + e.deltaY*.03)); });
+renderer.domElement.addEventListener("wheel", e => { dist = Math.min(40, Math.max(12, dist + e.deltaY*.03)); });
 
 function resize(){
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w,h); camera.aspect = w/h;
-  dist = Math.max(dist, w < h ? 46 : 32);  // layar HP: mundurkan kamera
+  dist = Math.max(dist, w < h ? 30 : 22);
   camera.updateProjectionMatrix();
 }
 addEventListener("resize", resize); resize();
 
-/* ============ 5. LOG & GELEMBU UCAP ============ */
+/* ============ 5. LOG & GELEMBUNG ============ */
 const logEl = document.getElementById("log");
 function log(name, text){
-  const p = document.createElement("p");
-  p.innerHTML = "<b></b> ";
-  p.firstChild.textContent = name + ":";
-  p.append(text);
-  logEl.appendChild(p); logEl.scrollTop = logEl.scrollHeight;
+  const p = document.createElement("p"); p.innerHTML = "<b></b> ";
+  p.firstChild.textContent = name + ":"; p.append(text);
+  logEl.insertBefore(p, logEl.firstChild);
 }
-function say(a, text, ms=2500){
+function say(a, text, ms=3000){
   a.bubble.textContent = text; a.bubble.classList.add("on");
   clearTimeout(a.bt); a.bt = setTimeout(() => a.bubble.classList.remove("on"), ms);
 }
@@ -278,10 +307,10 @@ function update(a, dt){
     a.body.rotation.z = Math.sin(clock.elapsedTime*6)*.03;
     a.timer -= dt;
     if (a.timer <= 0) {
-      a.task = a.tasks[a.taskIdx++ % a.tasks.length];
-      say(a, a.task + "…");
+      const task = a.tasks[Math.floor(Math.random() * a.tasks.length)];
+      say(a, task + "...");
       a.state = "think";
-      agentThink(a, a.task).then(res => {
+      agentThink(a, task).then(res => {
         a.result = res; a.state = "toBoard";
         setPath(a, a.route);
       });
@@ -292,12 +321,12 @@ function update(a, dt){
       a.path.shift();
       if (!a.path.length) {
         if (a.state === "toBoard") {
-          say(a, a.result, 3000); log(a.name, a.result);
-          a.state = "report"; a.timer = 2.5;
-        } else { a.state = "work"; a.timer = 3 + Math.random()*3; }
+          log(a.name, a.result);
+          a.state = "report"; a.timer = 2;
+        } else { a.state = "work"; a.timer = 4 + Math.random()*3; }
       }
     } else {
-      d.normalize(); a.mesh.position.addScaledVector(d, dt*2.2);
+      d.normalize(); a.mesh.position.addScaledVector(d, dt*2.5);
       a.mesh.rotation.y = Math.atan2(d.x, d.z);
       a.body.rotation.z = Math.sin(clock.elapsedTime*12)*.08;
     }
@@ -316,11 +345,11 @@ function loop(){
     a.diamond.position.y = 2.4 + Math.sin(clock.elapsedTime*2)*.08;
     a.mesh.position.y = (a.state==="toBoard"||a.state==="toDesk") ? Math.abs(Math.sin(clock.elapsedTime*10))*.07 : 0;
     const wk = (a.state==="toBoard"||a.state==="toDesk"), t = clock.elapsedTime;
-    const sw = wk ? Math.sin(t*10)*.6 : 0;
-    if (!wk) a.mesh.rotation.y = Math.PI;                 // menghadap meja / papan
-    const ty = a.state==="work" ? -1.15 + Math.sin(t*14)*.12 : 0;   // gerakan mengetik
+    const sw = wk ? Math.sin(t*12)*.6 : 0;
+    if (!wk) a.mesh.rotation.y = Math.PI;
+    const ty = a.state==="work" ? -1.15 + Math.sin(t*16)*.15 : 0;
     a.armL.rotation.x = wk ? sw : ty;
-    a.armR.rotation.x = wk ? -sw : (a.state==="work" ? ty + Math.sin(t*14+2)*.12 : 0);
+    a.armR.rotation.x = wk ? -sw : (a.state==="work" ? ty + Math.sin(t*16+2)*.15 : 0);
     a.legL.rotation.x = -sw; a.legR.rotation.x = sw;
     v.copy(a.mesh.position); v.y = 2.9; v.project(camera);
     a.bubble.style.left = ((v.x+1)/2*innerWidth) + "px";
@@ -330,7 +359,8 @@ function loop(){
   camera.lookAt(0, 1, 0);
   renderer.render(scene, camera);
 }
-log("Kantor", "Dua agent mulai bekerja.");
+log("Sistem", "Server Bot Auto Uploader aktif.");
+log("Sistem", "Karyawan divisi siap menerima tugas.");
 loop();
 </script>
 </body>
