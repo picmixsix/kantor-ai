@@ -5,465 +5,304 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dasbor Virtual - Divisi Affiliate FB</title>
 <style>
-  :root { --bg:#9fd6a4; --panel:#1e2342; --ink:#eef0ff; --muted:#9aa0c8; --lamp:#ffb454; --brand:#3ddcc5;}
-  * { box-sizing: border-box; }
+  :root { --bg:#9fd6a4; --panel:#1e2342; --ink:#eef0ff; --muted:#9aa0c8; --lamp:#ffb454; --brand:#3ddcc5; }
+  * { box-sizing:border-box; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
-    font-family: "Trebuchet MS", "Segoe UI", sans-serif; overflow:hidden; }
+    font-family:"Trebuchet MS", "Segoe UI", sans-serif; overflow:hidden; }
   #scene { position:fixed; inset:0; touch-action:none; }
-  
-  /* UI BUBBLE & LOG */
-  .bubble { position:fixed; left:0; top:0; max-width:180px; padding:8px 12px; border-radius:12px;
-    background:rgba(255,255,255,0.95); color:#14172b; font-size:12px; line-height:1.4; font-weight:bold; pointer-events:none;
-    transform:translate(-50%,-100%); opacity:0; transition:opacity .25s; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .bubble { position:fixed; left:0; top:0; max-width:190px; padding:8px 12px; border-radius:12px;
+    background:rgba(255,255,255,.95); color:#14172b; font-size:12px; line-height:1.4; font-weight:bold;
+    pointer-events:none; transform:translate(-50%,-100%); opacity:0; transition:opacity .25s;
+    box-shadow:0 4px 12px rgba(0,0,0,.15); }
   .bubble.on { opacity:1; }
-  
   #log { position:fixed; left:0; right:0; bottom:0; max-height:20%; overflow-y:auto;
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
-    background:rgba(30,35,66,.92); font-size:13px; line-height:1.5; z-index: 10; border-top: 2px solid var(--brand); }
-  #log p { margin:0 0 4px; color:var(--muted); }
-  #log b { color:var(--lamp); }
-  
-  /* PANEL FORMULIR AFFILIATE */
-  #form-panel { position:fixed; top:0; right:-400px; width:100%; max-width:380px; height:100%; 
-    background:rgba(30,35,66,0.98); z-index:30; transition:right 0.3s ease; padding:20px; overflow-y:auto; 
-    border-left: 1px solid #3a416b; box-shadow: -5px 0 15px rgba(0,0,0,0.3); }
-  #form-panel.open { right: 0; }
-  
-  .close-btn { color:#ff7a59; cursor:pointer; font-weight:bold; float:right; font-size:16px; }
-  #form-panel h2 { margin-top:0; font-size:18px; color:var(--brand); border-bottom:1px solid #3a416b; padding-bottom:10px;}
-  
-  .form-group { margin-bottom: 15px; }
-  .form-group label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
-  .form-group input, .form-group select, .form-group textarea { width:100%; padding:8px; border-radius:6px; 
-    border:1px solid #4a5482; background:#14172b; color:#fff; font-family:inherit; font-size:13px; }
-  .form-group textarea { resize:vertical; min-height:60px; }
-  .checkbox-group { display:flex; align-items:center; gap:8px; font-size:13px; margin-top:5px; color:#fff;}
-  
-  .btn-submit { width:100%; background:var(--brand); color:#14172b; border:none; padding:10px; 
-    border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px; }
-  .btn-submit:hover { background:#2bbfa8; }
-
-  #title { position:fixed; top:20px; left:20px; font-size:16px; font-weight:bold; background:rgba(255,255,255,0.8); 
-    padding:8px 12px; border-radius:8px; color:#1e2342; pointer-events:none; z-index: 10;}
-    
-  /* KONTROL ZOOM */
-  #zoom-controls { position:fixed; bottom:25%; right:20px; z-index:10; display:flex; flex-direction:column; gap:12px; }
-  .btn-zoom { width:45px; height:45px; background:var(--panel); color:white; border:2px solid var(--brand); 
-    border-radius:50%; font-size:24px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;}
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); background:rgba(30,35,66,.92);
+    font-size:13px; line-height:1.5; z-index:10; border-top:2px solid var(--brand); }
+  #log p { margin:0 0 4px; color:var(--muted); } #log b { color:var(--lamp); }
+  #title { position:fixed; top:calc(env(safe-area-inset-top, 0px) + 14px); left:14px; font-size:16px; font-weight:bold;
+    background:rgba(255,255,255,.85); padding:8px 12px; border-radius:8px; color:#1e2342; z-index:10; border:0;
+    font-family:inherit; }
+  #zoom-controls { position:fixed; bottom:25%; right:16px; z-index:10; display:flex; flex-direction:column; gap:12px; }
+  .btn-zoom { width:45px; height:45px; background:var(--panel); color:#fff; border:2px solid var(--brand);
+    border-radius:50%; font-size:24px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,.3); }
   .btn-zoom:active { background:var(--brand); color:var(--panel); }
+  /* panel tugas */
+  #form-panel { position:fixed; top:0; right:-420px; width:100%; max-width:400px; height:100%; background:rgba(30,35,66,.98);
+    z-index:30; transition:right .3s ease; padding:calc(env(safe-area-inset-top, 0px) + 16px) 18px 28px; overflow-y:auto;
+    border-left:1px solid #3a416b; box-shadow:-5px 0 15px rgba(0,0,0,.3); }
+  #form-panel.open { right:0; }
+  .close-btn { color:#ff9a7a; font-weight:bold; float:right; font-size:15px; background:none; border:0; font-family:inherit; }
+  #form-panel h2 { margin:0 0 12px; font-size:18px; color:var(--brand); border-bottom:1px solid #3a416b; padding-bottom:10px; }
+  .fg { margin-bottom:14px; } .fg > label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
+  .fg input, .fg select, .fg textarea { width:100%; padding:9px; border-radius:6px; border:1px solid #4a5482;
+    background:#14172b; color:#fff; font-family:inherit; font-size:14px; }
+  .fg textarea { resize:vertical; min-height:60px; }
+  .petugas { display:flex; gap:8px; }
+  .petugas button { flex:1; padding:10px; border-radius:8px; border:2px solid #4a5482; background:#14172b; color:#fff;
+    font-weight:700; font-size:14px; font-family:inherit; }
+  .petugas button.on[data-p="Budi"] { border-color:#ff7a59; background:#3a2a2a; }
+  .petugas button.on[data-p="Sari"] { border-color:#3ddcc5; background:#17393a; }
+  .btn-submit { width:100%; background:var(--brand); color:#14172b; border:0; padding:12px; border-radius:8px; font-weight:bold;
+    font-size:15px; font-family:inherit; }
+  details { margin-bottom:14px; font-size:13px; color:var(--muted); } summary { padding:4px 0; }
+  .job { padding:9px 10px; margin-bottom:8px; background:#14172b; border-radius:8px; font-size:12px; line-height:1.5; border-left:4px solid #4a5482; }
+  .job.selesai { border-color:#3ddc84; } .job.gagal { border-color:#ff5f5f; } .job.memproses { border-color:#ffd23f; }
+  .job small { color:var(--muted); display:block; }
 </style>
 </head>
 <body>
 <div id="scene"></div>
-<div id="title">🏢 Divisi Affiliate FB</div>
-
-<!-- TOMBOL ZOOM (UI) -->
+<button id="title" onclick="bukaPanel()">🏢 Divisi Affiliate FB · Tugas Baru</button>
 <div id="zoom-controls">
-  <button class="btn-zoom" onclick="zoomCam(-6)" title="Zoom In">+</button>
-  <button class="btn-zoom" onclick="zoomCam(6)" title="Zoom Out">-</button>
+  <button class="btn-zoom" onclick="zoomCam(-6)">+</button><button class="btn-zoom" onclick="zoomCam(6)">−</button>
 </div>
 
-<!-- PANEL FORMULIR SAMPING -->
 <div id="form-panel">
-  <span class="close-btn" onclick="document.getElementById('form-panel').classList.remove('open')">✖ Tutup</span>
-  <h2>Form Auto Uploader Reels</h2>
-  
-  <div class="form-group">
-    <label>1. Link Video GDrive (Publik)</label>
-    <input type="url" placeholder="https://drive.google.com/file/d/..." id="gdriveLink">
-  </div>
-  
-  <div class="form-group">
-    <label>2. Deskripsi & Tagar</label>
-    <textarea id="descText" placeholder="Tulis deskripsi dasar di sini..."></textarea>
-    <div class="checkbox-group">
-      <input type="checkbox" id="autoSpin" checked>
-      <label for="autoSpin">Aktifkan Auto-Spin Deskripsi</label>
-    </div>
-    <div class="checkbox-group">
-      <input type="checkbox" id="trendTagar" checked>
-      <label for="trendTagar">Sisipkan Tagar Trending Terkini</label>
-    </div>
-  </div>
-  
-  <div class="form-group">
-    <label>3. Link Redirect (Shopee Affiliate)</label>
-    <input type="url" placeholder="https://shope.ee/..." id="redirectLink">
-  </div>
-  
-  <div class="form-group">
-    <label>4. Pilih Akun Fanpage</label>
-    <select id="fanpageSelect">
-      <option value="">Memuat daftar Fanpage...</option>
-    </select>
-  </div>
-  
-  <div class="form-group">
-    <label>5. Jadwal Upload</label>
-    <select id="scheduleType" onchange="toggleTimeInput()">
-      <option value="now">Upload Sekarang (Trigger Bot)</option>
-      <option value="cron">Jadwalkan Nanti (Masuk Antrean/Cron)</option>
-    </select>
-    <input type="datetime-local" id="scheduleTime" style="display:none; margin-top:8px;">
-  </div>
-  
-  <button class="btn-submit" onclick="submitForm()">Kirim Tugas ke Antrean (GitHub)</button>
+  <button class="close-btn" onclick="tutupPanel()">✖ Tutup</button>
+  <h2>Tugas Upload Reels</h2>
+  <details id="cfg"><summary>Pengaturan GitHub (sekali saja)</summary>
+    <div class="fg"><label>Token GitHub (hanya tersimpan di HP ini)</label><input type="password" id="ghToken" placeholder="github_pat_...">
+    <button class="btn-submit" style="margin-top:8px" onclick="simpanToken()">Simpan token</button></div>
+  </details>
+  <div class="fg"><label>1. Link video Google Drive (akses publik)</label><input type="url" id="gdriveLink" placeholder="https://drive.google.com/file/d/..."></div>
+  <div class="fg"><label>2. Deskripsi</label><textarea id="descText" placeholder="Tulis deskripsi reel..."></textarea></div>
+  <div class="fg"><label>3. Tagar (pisahkan dengan spasi)</label><input id="tagarText" placeholder="#kopi #promo #fyp"></div>
+  <div class="fg"><label>4. Link affiliate</label><input type="url" id="redirectLink" placeholder="https://shope.ee/...">
+    <select id="linkDi" style="margin-top:8px"><option value="komentar">Taruh link di komentar pertama</option>
+    <option value="deskripsi">Taruh link di deskripsi</option><option value="keduanya">Di deskripsi dan komentar</option></select></div>
+  <div class="fg"><label>5. Komentar pertama</label><textarea id="komentarText" placeholder="Contoh: Beli di sini ya 👇"></textarea></div>
+  <div class="fg"><label>6. Fanpage tujuan</label><select id="fanpageSelect"><option>Memuat...</option></select></div>
+  <div class="fg"><label>7. Jam upload</label>
+    <select id="scheduleType" onchange="document.getElementById('scheduleTime').style.display=this.value==='cron'?'block':'none'">
+      <option value="now">Sekarang</option><option value="cron">Jadwalkan</option></select>
+    <input type="datetime-local" id="scheduleTime" style="display:none;margin-top:8px"></div>
+  <div class="fg"><label>8. Siapa yang mengerjakan?</label>
+    <div class="petugas"><button data-p="Budi" class="on" onclick="pilihPetugas('Budi')">Budi</button><button data-p="Sari" onclick="pilihPetugas('Sari')">Sari</button></div></div>
+  <button class="btn-submit" id="btnKirim" onclick="submitForm()">Beri tugas</button>
+  <h2 style="margin-top:22px">Status tugas</h2><div id="jobs"><small style="color:#9aa0c8">Belum ada data.</small></div>
 </div>
 
 <div id="log"></div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-/* ============ MEMUAT FANPAGE DINAMIS DARI PAGES.JSON ============ */
-const githubUser = "picmixsix"; 
-const githubRepo = "kantor-ai"; 
+/* ============ PENGATURAN REPO ============ */
+const U = "picmixsix", R = "kantor-ai";
+let petugas = "Budi", FANPAGES = {};
+const $ = id => document.getElementById(id);
+function bukaPanel(){ $("form-panel").classList.add("open"); if (!localStorage.getItem("ghTok")) $("cfg").open = true; muatJobs(); }
+function tutupPanel(){ $("form-panel").classList.remove("open"); }
+function pilihPetugas(p){ petugas = p; document.querySelectorAll(".petugas button").forEach(b => b.classList.toggle("on", b.dataset.p === p)); }
+function simpanToken(){ const t = $("ghToken").value.trim(); if (t) { localStorage.setItem("ghTok", t); $("ghToken").value = ""; $("cfg").open = false; log("Sistem", "Token tersimpan di HP ini."); } }
 
-async function loadFanpages() {
-  const selectEl = document.getElementById("fanpageSelect");
+async function gh(path, opt = {}){
+  const tok = localStorage.getItem("ghTok");
+  const r = await fetch("https://api.github.com" + path, { ...opt, headers: { Accept:"application/vnd.github+json",
+    ...(tok ? { Authorization:"Bearer " + tok } : {}), ...(opt.headers || {}) } });
+  if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).message) || r.status);
+  return r;
+}
+async function muatFanpage(){
   try {
-    const res = await fetch(`https://raw.githubusercontent.com/${githubUser}/${githubRepo}/main/pages.json`);
-    if(!res.ok) throw new Error("Gagal load pages.json");
-    const pages = await res.json();
-    selectEl.innerHTML = "";
-    
-    for (const key in pages) {
-      const opt = document.createElement("option");
-      opt.value = key;
-      opt.textContent = pages[key].nama;
-      selectEl.appendChild(opt);
+    const r = await fetch(`https://raw.githubusercontent.com/${U}/${R}/main/pages.json?t=${Date.now()}`);
+    FANPAGES = await r.json(); $("fanpageSelect").innerHTML = "";
+    for (const k in FANPAGES) $("fanpageSelect").add(new Option(FANPAGES[k].nama, k));
+  } catch (e) { $("fanpageSelect").innerHTML = "<option value=''>Gagal memuat fanpage</option>"; }
+}
+const b64 = s => btoa(unescape(encodeURIComponent(s)));
+
+async function submitForm(){
+  if (!localStorage.getItem("ghTok")) { $("cfg").open = true; alert("Isi token GitHub dulu di Pengaturan."); return; }
+  const v = id => $(id).value.trim();
+  if (!/drive\.google\.com|docs\.google\.com/.test(v("gdriveLink"))) { alert("Link Google Drive belum benar."); return; }
+  if (!$("fanpageSelect").value) { alert("Pilih fanpage."); return; }
+  const jadwal = $("scheduleType").value === "now" ? new Date() : new Date(v("scheduleTime"));
+  if (isNaN(jadwal)) { alert("Jam upload belum diisi."); return; }
+  const id = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14) + "-" + Math.random().toString(36).slice(2, 6);
+  const job = { id, fanpage:$("fanpageSelect").value, gdrive_link:v("gdriveLink"), deskripsi:v("descText"),
+    tagar:v("tagarText").split(/[\s,]+/).filter(Boolean).map(t => t.replace(/^#/, "")), redirect_link:v("redirectLink"),
+    link_di:v("linkDi"), komentar:v("komentarText"), jadwal:jadwal.toISOString(), petugas, status:"menunggu", dibuat:new Date().toISOString() };
+  $("btnKirim").disabled = true;
+  try {
+    await gh(`/repos/${U}/${R}/contents/queue/${id}.json`, { method:"PUT", body:JSON.stringify({
+      message:`${petugas} dapat tugas baru`, content:b64(JSON.stringify(job, null, 2)) }) });
+    const a = agen(petugas); say(a, "Siap! Tugas diterima, saya kerjakan.", 4000);
+    log(a.n, `Tugas untuk ${FANPAGES[job.fanpage].nama} diterima.`); tutupPanel(); muatJobs();
+  } catch (e) { alert("Gagal mengirim: " + e.message); }
+  $("btnKirim").disabled = false;
+}
+
+/* ============ STATUS TUGAS (DIBACA DARI REPO) ============ */
+const seen = {}; let first = true;
+async function muatJobs(){
+  try {
+    const list = (await (await gh(`/repos/${U}/${R}/contents/queue?ref=main&t=${Date.now()}`)).json())
+      .filter(f => f.name.endsWith(".json")).sort((a, b) => b.name.localeCompare(a.name)).slice(0, 8);
+    const jobs = [];
+    for (const f of list) {
+      const r = await gh(f.url, { headers:{ Accept:"application/vnd.github.raw+json" } });
+      try { jobs.push(await r.json()); } catch (e) {}
     }
-  } catch (err) {
-    selectEl.innerHTML = '<option value="kopi_nusantara">Kopi Nusantara (Default)</option>';
-  }
+    const box = $("jobs"); box.innerHTML = "";
+    if (!jobs.length) box.innerHTML = "<small style='color:#9aa0c8'>Belum ada tugas.</small>";
+    jobs.forEach(j => {
+      const d = document.createElement("div"); d.className = "job " + j.status;
+      const nama = (FANPAGES[j.fanpage] || {}).nama || j.fanpage;
+      d.textContent = `${j.petugas} → ${nama} · ${j.status.toUpperCase()}`;
+      const s = document.createElement("small");
+      s.textContent = new Date(j.jadwal).toLocaleString("id-ID", { dateStyle:"medium", timeStyle:"short" }) + (j.galat ? " · " + j.galat : "");
+      d.appendChild(s); box.appendChild(d);
+      if (seen[j.id] !== j.status) { if (!first) reaksi(j, nama); seen[j.id] = j.status; }
+    });
+    first = false;
+  } catch (e) { if (!/Not Found/i.test(e.message)) log("Sistem", "Gagal memuat status: " + e.message); first = false; }
 }
-loadFanpages();
-
-/* ============ LOGIKA UI FORM & GITHUB ISSUES ============ */
-function toggleTimeInput() {
-  const type = document.getElementById("scheduleType").value;
-  document.getElementById("scheduleTime").style.display = type === "cron" ? "block" : "none";
+function reaksi(j, nama){
+  const a = agen(j.petugas);
+  if (j.status === "memproses") { say(a, `Mengunggah reel ke ${nama}...`, 6000); log(a.n, `Mulai mengunggah ke ${nama}.`); }
+  if (j.status === "selesai") { say(a, "Reel sudah tayang! ✅", 6000); log(a.n, `Reel di ${nama} berhasil tayang.`); }
+  if (j.status === "gagal") { say(a, "Ada kendala, cek status tugas.", 6000); log(a.n, "Gagal: " + (j.galat || "")); }
 }
+setInterval(muatJobs, 60000);
 
-function submitForm() {
-  const gdrive = document.getElementById("gdriveLink").value || "Kosong";
-  const desc = document.getElementById("descText").value || "Kosong";
-  const spin = document.getElementById("autoSpin").checked ? "YA" : "TIDAK";
-  const tagar = document.getElementById("trendTagar").checked ? "YA" : "TIDAK";
-  const redirect = document.getElementById("redirectLink").value || "Kosong";
-  const fp = document.getElementById("fanpageSelect").value;
-  
-  const scheduleType = document.getElementById("scheduleType").value;
-  const scheduleTime = document.getElementById("scheduleTime").value || "Kosong";
-  
-  const isNow = (scheduleType === "now");
-  const label = isNow ? "upload-sekarang" : "antrean";
-  const waktuTarget = isNow ? "SEKARANG" : scheduleTime;
-  const judul = `[${fp.toUpperCase()}] Upload Reels - ${waktuTarget}`;
-
-  const bodyData = `Tugas baru untuk divisi affiliate! Berikut detailnya:
-
-\`\`\`json
-{
-  "fanpage": "${fp}",
-  "gdrive_link": "${gdrive}",
-  "deskripsi": "${encodeURIComponent(desc)}",
-  "auto_spin": "${spin}",
-  "trending_tagar": "${tagar}",
-  "redirect_link": "${redirect}",
-  "jadwal": "${waktuTarget}"
-}
-\`\`\``;
-
-  const issueUrl = `https://github.com/${githubUser}/${githubRepo}/issues/new?title=${encodeURIComponent(judul)}&body=${encodeURIComponent(bodyData)}&labels=${label}`;
-
-  document.getElementById('form-panel').classList.remove('open');
-  log("Sistem", isNow ? "Mengarahkan ke pembuatan task Instan..." : "Mengarahkan ke pembuatan task Antrean...");
-  say(AGENTS[1], "Siap komandan! Buka lembar tugas (Issue).");
-  
-  setTimeout(() => {
-    window.open(issueUrl, "_blank");
-  }, 1000);
-}
-
-/* ============ 1. PENGATURAN AGENT ============ */
+/* ============ AGENT ============ */
 const AGENTS = [
-  { name:"Sari (Copywriter)", role:"Manajer Konten", color:0x3ddcc5, desk:[0, -2], route:[[-2,-2],[-2,1],[3,1]],
-    outfit:0x8a8f9c, bottom:0x6a6f7c, style:"cepol",
-    tasks:["Mengambil video dari GDrive", "Melakukan spin deskripsi anti-spam", "Menyisipkan tagar trending"] },
-  { name:"Budi (Uploader)", role:"Admin Bot & Jadwal", color:0xff7a59, desk:[-4, 2], route:[[-2,2],[-2,1],[3,1]], outfit:0xff9a6c, bottom:0x5b7fb5, hair:0x2b1d14,
-    tasks:["Menjalankan Cron Job antrean", "Push video ke Fanpage FB", "Memeriksa status publikasi"] },
-  { name:"Citra (Account)", role:"Manajer Fanpage", color:0xc6b8ea, desk:[-4, -2], route:[[-2,-2],[-2,1],[3,1]], outfit:0xa8dcc8, bottom:0x4a5a8a,
-    tasks:["Mengecek kesehatan Fanpage", "Menyematkan Link Redirect", "Mengelola daftar akun"] }
+  { n:"Sari", name:"Sari (Copywriter)", color:0x3ddcc5, desk:[0, -2], route:[[-2,-2],[-2,1],[3,1]], outfit:0x8a8f9c, bottom:0x6a6f7c, style:"cepol",
+    tasks:["Menyusun deskripsi reel", "Merapikan tagar", "Menyiapkan komentar pertama"] },
+  { n:"Budi", name:"Budi (Uploader)", color:0xff7a59, desk:[-4, 2], route:[[-2,2],[-2,1],[3,1]], outfit:0xff9a6c, bottom:0x5b7fb5, hair:0x2b1d14,
+    tasks:["Memeriksa antrean upload", "Memeriksa status publikasi", "Mengecek token fanpage"] },
+  { n:"Citra", name:"Citra (Account)", color:0xc6b8ea, desk:[-4, -2], route:[[-2,-2],[-2,1],[3,1]], outfit:0xa8dcc8, bottom:0x4a5a8a,
+    tasks:["Mengecek kesehatan fanpage", "Merapikan daftar akun", "Memantau komentar masuk"] }
 ];
+const agen = nama => AGENTS.find(a => a.n === nama) || AGENTS[0];
+async function agentThink(agent, task){ await new Promise(r => setTimeout(r, 1500)); return "Selesai: " + task; }
 
-/* ============ 2. OTAK AGENT ============ */
-async function agentThink(agent, task) {
-  await new Promise(r => setTimeout(r, 1500));
-  return "Selesai: " + task;
-}
-
-/* ============ 3. SCENE & KANTOR 3D ============ */
-const host = document.getElementById("scene");
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1e36);
+/* ============ SCENE ============ */
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1e36);
 const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 120);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-host.appendChild(renderer.domElement);
-
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+$("scene").appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9a7a, 0.7));
 const sun = new THREE.DirectionalLight(0xfff0d4, 0.85);
-sun.position.set(-9, 18, 11); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.position.set(-9, 18, 11); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left:-15, right:15, top:15, bottom:-15, near:1, far:60 });
 scene.add(sun);
-
-const smooth = (c) => new THREE.MeshStandardMaterial({ color:c, roughness:.6 });
-const mat = (c) => new THREE.MeshStandardMaterial({ color:c, flatShading:true, roughness:.9 });
-function box(w,h,d,c,x,y,z){
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c));
-  m.position.set(x,y,z); m.castShadow = m.receiveShadow = true; scene.add(m); return m;
-}
-
-box(14,.2,10,0xe8c594,0,-.1,0); 
-const WALL_COLOR = 0xcfe6e2;
-function wall(x1,z1,x2,z2,h,c=WALL_COLOR){
-  const horiz = z1===z2, len = Math.abs(horiz? x2-x1 : z2-z1);
-  const cx=(x1+x2)/2, cz=(z1+z2)/2;
-  box(horiz?len:.2, h, horiz?.2:len, c, cx, h/2, cz);
-  box(horiz?len:.26, .06, horiz?.26:len, 0x4a5482, cx, h+.03, cz); 
-}
-function glass(x1,z1,x2,z2,h){
-  const horiz=z1===z2, len=Math.abs(horiz?x2-x1:z2-z1), cx=(x1+x2)/2, cz=(z1+z2)/2;
-  const m=box(horiz?len:.06,h,horiz?.06:len,0x89cbed,cx,h/2,cz);
-  m.material.setValues({transparent:true,opacity:.4}); m.castShadow=false;
-  box(horiz?len:.12,.06,horiz?.12:len,0xffffff,cx,h+.03,cz);
-}
-wall(-7,-5, 7,-5, 2.5); wall(-7,-5, -7,5, 2.5); wall(-7,5, -3,5, 2.5); 
-glass(-3,5, 7,5, 2.5); wall(7,-5, 7,-1, 2.5); glass(7,-1, 7,5, 2.5);  
-
-box(.1, 1.4, 2.4, 0x1e2342, 6.9, 1.3, -2.5);
-box(.11, 1.2, 2.2, 0x3ddcc5, 6.9, 1.3, -2.5).material.setValues({emissive:0x3ddcc5, emissiveIntensity:0.3});
-box(1.2, 2, .8, 0x4a5482, -6.2, 1, -4);
-box(.8, .1, .6, 0x14172b, -6.2, 1.5, -4); 
-box(.1, .05, .05, 0xffb454, -5.8, 1.5, -4).material.setValues({emissive:0xffb454}); 
-
-function cyl(r,h,c,x,y,z){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,18),smooth(c)); m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; scene.add(m); return m; }
-function plant(x,z,k=1){ cyl(.22*k,.35*k,0xc9835a,x,.17*k,z); const l=new THREE.Mesh(new THREE.SphereGeometry(.42*k,12,10),smooth(0x62b36a)); l.position.set(x,.75*k,z); l.scale.y=1.2; l.castShadow=true; scene.add(l); }
-plant(-6, 4, 1.2); plant(6, 4, 1.2); plant(-6,-4, 1.5);
-
+const smooth = c => new THREE.MeshStandardMaterial({ color:c, roughness:.6 });
+const mat = c => new THREE.MeshStandardMaterial({ color:c, flatShading:true, roughness:.9 });
+function box(w,h,d,c,x,y,z){ const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat(c)); m.position.set(x,y,z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; }
+box(14,.2,10,0xe8c594,0,-.1,0);
+function wall(x1,z1,x2,z2,h,c=0xcfe6e2){ const hz = z1===z2, len = Math.abs(hz ? x2-x1 : z2-z1), cx=(x1+x2)/2, cz=(z1+z2)/2;
+  box(hz?len:.2, h, hz?.2:len, c, cx, h/2, cz); box(hz?len:.26, .06, hz?.26:len, 0x4a5482, cx, h+.03, cz); }
+function glass(x1,z1,x2,z2,h){ const hz = z1===z2, len = Math.abs(hz ? x2-x1 : z2-z1), cx=(x1+x2)/2, cz=(z1+z2)/2;
+  const m = box(hz?len:.06, h, hz?.06:len, 0x89cbed, cx, h/2, cz); m.material.setValues({ transparent:true, opacity:.4 }); m.castShadow = false;
+  box(hz?len:.12, .06, hz?.12:len, 0xffffff, cx, h+.03, cz); }
+wall(-7,-5,7,-5,2.5); wall(-7,-5,-7,5,2.5); wall(-7,5,-3,5,2.5); glass(-3,5,7,5,2.5); wall(7,-5,7,-1,2.5); glass(7,-1,7,5,2.5);
+box(.1,1.4,2.4,0x1e2342,6.9,1.3,-2.5);
+box(.11,1.2,2.2,0x3ddcc5,6.9,1.3,-2.5).material.setValues({ emissive:0x3ddcc5, emissiveIntensity:.3 });
+function cyl(r,h,c,x,y,z){ const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,18), smooth(c)); m.position.set(x,y,z); m.castShadow = m.receiveShadow = true; scene.add(m); }
+function plant(x,z,k=1){ cyl(.22*k,.35*k,0xc9835a,x,.17*k,z); const l = new THREE.Mesh(new THREE.SphereGeometry(.42*k,12,10), smooth(0x62b36a));
+  l.position.set(x,.75*k,z); l.scale.y = 1.2; l.castShadow = true; scene.add(l); }
+plant(-6,4,1.2); plant(6,4,1.2); plant(-6,-4,1.5);
 AGENTS.forEach(a => {
   const [x,z] = a.desk;
   box(2.2,.15,1.1,0xfcfcfc,x,.9,z);
-  box(.12,.9,.12,0x333333,x-.9,.45,z-.4); box(.12,.9,.12,0x333333,x+.9,.45,z-.4);
-  box(.12,.9,.12,0x333333,x-.9,.45,z+.4); box(.12,.9,.12,0x333333,x+.9,.45,z+.4);
-  box(.9,.6,.08,0x0e1020,x-0.5,1.45,z-.3).rotation.y = Math.PI/12;
-  box(.9,.6,.08,0x0e1020,x+0.5,1.45,z-.3).rotation.y = -Math.PI/12;
-  const glow = box(.8,.5,.02,a.color,x-0.5,1.45,z-.26);
+  [[-.9,-.4],[.9,-.4],[-.9,.4],[.9,.4]].forEach(([dx,dz]) => box(.12,.9,.12,0x333333,x+dx,.45,z+dz));
+  box(.9,.6,.08,0x0e1020,x-.5,1.45,z-.3).rotation.y = Math.PI/12;
+  box(.9,.6,.08,0x0e1020,x+.5,1.45,z-.3).rotation.y = -Math.PI/12;
+  const glow = box(.8,.5,.02,a.color,x-.5,1.45,z-.26);
   glow.material.emissive = new THREE.Color(a.color); glow.material.emissiveIntensity = .5; glow.rotation.y = Math.PI/12;
-  box(2.6,.04,1.8,a.color,x,.03,z+.5).material.setValues({transparent:true,opacity:.3});
+  box(2.6,.04,1.8,a.color,x,.03,z+.5).material.setValues({ transparent:true, opacity:.3 });
 });
-
-function ball(r, c, x, y, z, sx=1, sy=1, sz=1){
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), smooth(c));
-  m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.castShadow = true; return m;
-}
-function limb(r, len, c){
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r*.9, len, 10), smooth(c));
-  m.position.y = -len/2; m.castShadow = true; return m;
-}
+function ball(r,c,x,y,z,sx=1,sy=1,sz=1){ const m = new THREE.Mesh(new THREE.SphereGeometry(r,20,14), smooth(c)); m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.castShadow = true; return m; }
+function limb(r,len,c){ const m = new THREE.Mesh(new THREE.CylinderGeometry(r,r*.9,len,10), smooth(c)); m.position.y = -len/2; m.castShadow = true; return m; }
 function makeAgent(a){
   const g = new THREE.Group(), skin = a.skin || 0xf6d5b8, top = a.outfit || a.color, bot = a.bottom || 0x4a5a8a;
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(.22,.19,.6,14), smooth(top));
-  torso.position.y = .92; torso.castShadow = true;
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(.22,.19,.6,14), smooth(top)); torso.position.y = .92; torso.castShadow = true;
   g.add(torso, ball(.2,bot,0,.62,0,1,.8,.9), ball(.23,top,0,1.2,0,1,.5,.9), ball(.34,skin,0,1.55,0));
   const mk = (x,y,col,len,r) => { const p = new THREE.Group(); p.position.set(x,y,0); p.add(limb(r,len,col)); g.add(p); return p; };
-  a.armL = mk(-.3,1.15,top,.5,.06); a.armR = mk(.3,1.15,top,.5,.06);
-  a.legL = mk(-.1,.6,bot,.52,.085); a.legR = mk(.1,.6,bot,.52,.085);
+  a.armL = mk(-.3,1.15,top,.5,.06); a.armR = mk(.3,1.15,top,.5,.06); a.legL = mk(-.1,.6,bot,.52,.085); a.legR = mk(.1,.6,bot,.52,.085);
   [a.armL,a.armR].forEach(p => p.add(ball(.07,skin,0,-.52,0)));
-  [a.legL,a.legR].forEach(p => p.add(ball(.1,0x333,0,-.54,.04,1,.6,1.4)));
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(.375, 20, 14, 0, Math.PI*2, 0, Math.PI*.56), smooth(a.hair || 0x3a2a22));
-  cap.position.set(0, 1.58, -.06); cap.castShadow = true; g.add(cap);
-  
+  [a.legL,a.legR].forEach(p => p.add(ball(.1,0x333333,0,-.54,.04,1,.6,1.4)));
+  [-1,1].forEach(s => g.add(ball(.05,0x1b1420,s*.13,1.57,.315)));
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(.375,20,14,0,Math.PI*2,0,Math.PI*.56), smooth(a.hair || 0x3a2a22));
+  cap.position.set(0,1.58,-.06); cap.castShadow = true; g.add(cap);
+  if (a.style === "cepol") { g.add(ball(.15,0x2a1f22,0,1.98,-.08)); [-1,1].forEach(s => g.add(ball(.045,0xe8788f,s*.33,1.45,.08,1,3.4,1))); }
   g.position.set(a.desk[0], 0, a.desk[1] + 1.1); scene.add(g);
-  a.mesh = g; a.body = torso; a.state = "work"; a.timer = 2 + Math.random()*2;
-  a.home = new THREE.Vector3(a.desk[0], 0, a.desk[1] + 1.1); a.path = [];
-  const bb = document.createElement("div"); bb.className = "bubble"; document.body.appendChild(bb);
-  a.bubble = bb;
+  a.mesh = g; a.body = torso; a.state = "work"; a.timer = 2 + Math.random()*2; a.path = [];
+  a.home = new THREE.Vector3(a.desk[0], 0, a.desk[1] + 1.1);
+  const bb = document.createElement("div"); bb.className = "bubble"; document.body.appendChild(bb); a.bubble = bb;
 }
 AGENTS.forEach(makeAgent);
 
-/* ============ 4. LOGO FACEBOOK MELAYANG & INTERAKTIF ============ */
-function createFBTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = "#1877F2";
-  ctx.beginPath(); ctx.roundRect(0, 0, 256, 256, 40); ctx.fill();
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 200px Arial, sans-serif";
-  ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText("f", 145, 145); 
-  return new THREE.CanvasTexture(canvas);
+/* ============ LOGO FACEBOOK (KLIK UNTUK MEMBUKA PANEL) ============ */
+function fbTexture(){
+  const c = document.createElement("canvas"); c.width = c.height = 256; const x = c.getContext("2d");
+  x.fillStyle = "#1877F2"; x.beginPath(); x.roundRect ? x.roundRect(0,0,256,256,40) : x.rect(0,0,256,256); x.fill();
+  x.fillStyle = "#fff"; x.font = "bold 200px Arial, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("f",145,145);
+  return new THREE.CanvasTexture(c);
 }
-const fbGeo = new THREE.BoxGeometry(2, 2, 0.3);
-const fbMat = new THREE.MeshStandardMaterial({ map: createFBTexture(), roughness:0.2, metalness:0.1 });
-const fbLogo = new THREE.Mesh(fbGeo, fbMat);
-fbLogo.position.set(0, 6, 0); 
-scene.add(fbLogo);
-
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let startClickPos = null;
-
-renderer.domElement.addEventListener('pointerdown', (e) => {
-  startClickPos = { x: e.clientX, y: e.clientY };
-});
-
-renderer.domElement.addEventListener('pointerup', (e) => {
-  if (startClickPos) {
-    const dx = e.clientX - startClickPos.x;
-    const dy = e.clientY - startClickPos.y;
-    if (Math.sqrt(dx*dx + dy*dy) < 10) {
-      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      const intersects = raycaster.intersectObject(fbLogo);
-      if (intersects.length > 0) {
-        document.getElementById('form-panel').classList.add('open');
-      }
-    }
+const fbLogo = new THREE.Mesh(new THREE.BoxGeometry(2,2,.3), new THREE.MeshStandardMaterial({ map:fbTexture(), roughness:.2, metalness:.1 }));
+fbLogo.position.set(0,6,0); scene.add(fbLogo);
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let downAt = null;
+renderer.domElement.addEventListener("pointerdown", e => { downAt = { x:e.clientX, y:e.clientY }; });
+renderer.domElement.addEventListener("pointerup", e => {
+  if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 10) {
+    ptr.set(e.clientX/innerWidth*2 - 1, -(e.clientY/innerHeight)*2 + 1); ray.setFromCamera(ptr, camera);
+    if (ray.intersectObject(fbLogo).length) bukaPanel();
   }
-  startClickPos = null;
+  downAt = null;
 });
 
-renderer.domElement.addEventListener('pointermove', (e) => {
-  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObject(fbLogo);
-  document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
-});
-
-/* ============ 5. KAMERA & KONTROL ZOOM ============ */
-let yaw = 0.5, pitch = 0.7, dist = 28, drag = null;
-let prevPinchDist = null;
-const pts = new Map();
-
-function zoomCam(amount) {
-  dist = Math.min(60, Math.max(12, dist + amount));
-}
-
-renderer.domElement.addEventListener("pointerdown", e => { pts.set(e.pointerId, e); drag = {x:e.clientX, y:e.clientY}; });
-addEventListener("pointerup", e => { 
-  pts.delete(e.pointerId); 
-  if(pts.size < 2) prevPinchDist = null;
-  if(pts.size === 1) drag = { x: Array.from(pts.values())[0].clientX, y: Array.from(pts.values())[0].clientY };
-  else drag = null;
-});
+/* ============ KAMERA ============ */
+let yaw = .5, pitch = .7, dist = 28, drag = null, prevPinch = null; const pts = new Map();
+function zoomCam(n){ dist = Math.min(60, Math.max(12, dist + n)); }
+renderer.domElement.addEventListener("pointerdown", e => { pts.set(e.pointerId, e); drag = { x:e.clientX, y:e.clientY }; });
+addEventListener("pointerup", e => { pts.delete(e.pointerId); if (pts.size < 2) prevPinch = null;
+  drag = pts.size === 1 ? { x:[...pts.values()][0].clientX, y:[...pts.values()][0].clientY } : null; });
 addEventListener("pointermove", e => {
-  if (!pts.has(e.pointerId)) return;
-  pts.set(e.pointerId, e);
-  
-  if (pts.size === 2) {
-    const arr = Array.from(pts.values());
-    const d = Math.hypot(arr[0].clientX - arr[1].clientX, arr[0].clientY - arr[1].clientY);
-    if (prevPinchDist !== null) zoomCam((prevPinchDist - d) * 0.1); 
-    prevPinchDist = d;
-  } 
-  else if (drag && pts.size === 1) {
-    yaw -= (e.clientX - drag.x) * 0.006;
-    pitch = Math.min(1.2, Math.max(.15, pitch + (e.clientY - drag.y) * 0.004));
-    drag = {x:e.clientX, y:e.clientY};
-  }
+  if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, e);
+  if (pts.size === 2) { const [p, q] = [...pts.values()], d = Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY); if (prevPinch !== null) zoomCam((prevPinch - d)*.1); prevPinch = d; }
+  else if (drag && pts.size === 1) { yaw -= (e.clientX - drag.x)*.006; pitch = Math.min(1.2, Math.max(.15, pitch + (e.clientY - drag.y)*.004)); drag = { x:e.clientX, y:e.clientY }; }
 });
-renderer.domElement.addEventListener("wheel", e => { zoomCam(e.deltaY * 0.03); });
-
-function resize(){
-  const w = innerWidth, h = innerHeight;
-  renderer.setSize(w,h); camera.aspect = w/h;
-  camera.updateProjectionMatrix();
-}
+renderer.domElement.addEventListener("wheel", e => zoomCam(e.deltaY*.03));
+function resize(){ renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
 
-/* ============ 6. LOG & GELEMBUNG ============ */
-const logEl = document.getElementById("log");
-function log(name, text){
-  const p = document.createElement("p"); p.innerHTML = "<b></b> ";
-  p.firstChild.textContent = name + ":"; p.append(text);
-  logEl.insertBefore(p, logEl.firstChild);
-}
-function say(a, text, ms=3000){
-  a.bubble.textContent = text; a.bubble.classList.add("on");
-  clearTimeout(a.bt); a.bt = setTimeout(() => a.bubble.classList.remove("on"), ms);
-}
-
-/* ============ 7. LOOP ANIMASI UTAMA ============ */
-const clock = new THREE.Clock();
-function setPath(a, pts){ a.path = pts.map(p => new THREE.Vector3(p[0], 0, p[1])); }
-const v = new THREE.Vector3();
-
+/* ============ LOG, GELEMBUNG, LOOP ============ */
+function log(name, text){ const p = document.createElement("p"); p.innerHTML = "<b></b> "; p.firstChild.textContent = name + ":"; p.append(text); $("log").insertBefore(p, $("log").firstChild); }
+function say(a, text, ms = 3000){ a.bubble.textContent = text; a.bubble.classList.add("on"); clearTimeout(a.bt); a.bt = setTimeout(() => a.bubble.classList.remove("on"), ms); }
+const clock = new THREE.Clock(), vv = new THREE.Vector3();
+const setPath = (a, pts) => { a.path = pts.map(p => new THREE.Vector3(p[0], 0, p[1])); };
 function loop(){
   requestAnimationFrame(loop);
-  const dt = Math.min(clock.getDelta(), .05);
-  const t = clock.elapsedTime;
-  
-  fbLogo.position.y = 5.5 + Math.sin(t * 2) * 0.3;
-  fbLogo.rotation.y += dt * 0.5;
-
+  const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
+  fbLogo.position.y = 5.5 + Math.sin(t*2)*.3; fbLogo.rotation.y += dt*.5;
   AGENTS.forEach(a => {
     if (a.state === "work") {
-      a.body.rotation.z = Math.sin(t*6)*.03;
-      a.timer -= dt;
-      if (a.timer <= 0) {
-        const task = a.tasks[Math.floor(Math.random() * a.tasks.length)];
-        say(a, task + "...");
-        a.state = "think";
-        agentThink(a, task).then(res => {
-          a.result = res; a.state = "toBoard";
-          setPath(a, a.route);
-        });
-      }
+      a.body.rotation.z = Math.sin(t*6)*.03; a.timer -= dt;
+      if (a.timer <= 0) { const task = a.tasks[Math.floor(Math.random()*a.tasks.length)]; say(a, task + "..."); a.state = "think";
+        agentThink(a, task).then(res => { a.result = res; a.state = "toBoard"; setPath(a, a.route); }); }
     } else if (a.state === "toBoard" || a.state === "toDesk") {
       const d = a.path[0].clone().sub(a.mesh.position); d.y = 0;
-      if (d.length() < .1) {
-        a.path.shift();
-        if (!a.path.length) {
-          if (a.state === "toBoard") { log(a.name, a.result); a.state = "report"; a.timer = 2; } 
-          else { a.state = "work"; a.timer = 4 + Math.random()*3; }
-        }
-      } else {
-        d.normalize(); a.mesh.position.addScaledVector(d, dt*2.5);
-        a.mesh.rotation.y = Math.atan2(d.x, d.z);
-        a.body.rotation.z = Math.sin(t*12)*.08;
-      }
-    } else if (a.state === "report") {
-      a.timer -= dt;
-      if (a.timer <= 0) { a.state = "toDesk"; setPath(a, a.route.slice(0,-1).reverse().concat([[a.home.x, a.home.z]])); }
-    }
-    
-    a.mesh.position.y = (a.state==="toBoard"||a.state==="toDesk") ? Math.abs(Math.sin(t*10))*.07 : 0;
-    const wk = (a.state==="toBoard"||a.state==="toDesk");
-    const sw = wk ? Math.sin(t*12)*.6 : 0;
-    if (!wk) a.mesh.rotation.y = Math.PI;
-    const ty = a.state==="work" ? -1.15 + Math.sin(t*16)*.15 : 0;
-    a.armL.rotation.x = wk ? sw : ty;
-    a.armR.rotation.x = wk ? -sw : (a.state==="work" ? ty + Math.sin(t*16+2)*.15 : 0);
+      if (d.length() < .1) { a.path.shift();
+        if (!a.path.length) { if (a.state === "toBoard") { a.state = "report"; a.timer = 2; } else { a.state = "work"; a.timer = 4 + Math.random()*3; } }
+      } else { d.normalize(); a.mesh.position.addScaledVector(d, dt*2.5); a.mesh.rotation.y = Math.atan2(d.x, d.z); a.body.rotation.z = Math.sin(t*12)*.08; }
+    } else if (a.state === "report") { a.timer -= dt;
+      if (a.timer <= 0) { a.state = "toDesk"; setPath(a, a.route.slice(0,-1).reverse().concat([[a.home.x, a.home.z]])); } }
+    const wk = a.state === "toBoard" || a.state === "toDesk", sw = wk ? Math.sin(t*12)*.6 : 0;
+    a.mesh.position.y = wk ? Math.abs(Math.sin(t*10))*.07 : 0; if (!wk) a.mesh.rotation.y = Math.PI;
+    const ty = a.state === "work" ? -1.15 + Math.sin(t*16)*.15 : 0;
+    a.armL.rotation.x = wk ? sw : ty; a.armR.rotation.x = wk ? -sw : (a.state === "work" ? ty + Math.sin(t*16 + 2)*.15 : 0);
     a.legL.rotation.x = -sw; a.legR.rotation.x = sw;
-    
-    v.copy(a.mesh.position); v.y = 2.9; v.project(camera);
-    a.bubble.style.left = ((v.x+1)/2*innerWidth) + "px";
-    a.bubble.style.top  = ((1-v.y)/2*innerHeight) + "px";
+    vv.copy(a.mesh.position); vv.y = 2.9; vv.project(camera);
+    a.bubble.style.left = ((vv.x + 1)/2*innerWidth) + "px"; a.bubble.style.top = ((1 - vv.y)/2*innerHeight) + "px";
   });
-  
   camera.position.set(Math.sin(yaw)*Math.cos(pitch)*dist, Math.sin(pitch)*dist, Math.cos(yaw)*Math.cos(pitch)*dist);
-  camera.lookAt(0, 1, 0);
-  renderer.render(scene, camera);
+  camera.lookAt(0, 1, 0); renderer.render(scene, camera);
 }
-
-log("Sistem", "Menghubungkan ke daftar Fanpage...");
+muatFanpage().then(() => muatJobs());
+log("Sistem", "Ketuk logo Facebook atau tombol judul untuk memberi tugas.");
 loop();
 </script>
 </body>
