@@ -48,14 +48,26 @@
 
   #title { position:fixed; top:20px; left:20px; font-size:16px; font-weight:bold; background:rgba(255,255,255,0.8); 
     padding:8px 12px; border-radius:8px; color:#1e2342; pointer-events:none; z-index: 10;}
+    
+  /* KONTROL ZOOM */
+  #zoom-controls { position:fixed; bottom:25%; right:20px; z-index:10; display:flex; flex-direction:column; gap:12px; }
+  .btn-zoom { width:45px; height:45px; background:var(--panel); color:white; border:2px solid var(--brand); 
+    border-radius:50%; font-size:24px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center;}
+  .btn-zoom:active { background:var(--brand); color:var(--panel); }
 </style>
 </head>
 <body>
 <div id="scene"></div>
-<div id="title">🏢 Divisi Affiliate Facebook (Auto Uploader)</div>
+<div id="title">🏢 Divisi Affiliate FB</div>
 
-<!-- TOMBOL BUKA FORM -->
-<button id="btn-form" onclick="document.getElementById('form-panel').classList.add('open')">📝 Buka Form Upload</button>
+<!-- TOMBOL ZOOM (UI) -->
+<div id="zoom-controls">
+  <button class="btn-zoom" onclick="zoomCam(-6)" title="Zoom In">+</button>
+  <button class="btn-zoom" onclick="zoomCam(6)" title="Zoom Out">-</button>
+</div>
+
+<!-- TOMBOL BUKA FORM (Alternatif) -->
+<button id="btn-form" onclick="document.getElementById('form-panel').classList.add('open')">📝 Form (Atau Klik Logo FB)</button>
 
 <!-- PANEL FORMULIR SAMPING -->
 <div id="form-panel">
@@ -72,7 +84,7 @@
     <textarea placeholder="Tulis deskripsi dasar di sini..."></textarea>
     <div class="checkbox-group">
       <input type="checkbox" id="autoSpin" checked>
-      <label for="autoSpin">Aktifkan Auto-Spin Deskripsi (Anti-Spam)</label>
+      <label for="autoSpin">Aktifkan Auto-Spin Deskripsi</label>
     </div>
     <div class="checkbox-group">
       <input type="checkbox" id="trendTagar" checked>
@@ -94,7 +106,6 @@
       <option value="fp4">Fanpage 4 (Fashion Wanita OOTD)</option>
       <option value="fp5">Fanpage 5 (Perabotan Estetik)</option>
     </select>
-    <a href="#" style="color:var(--brand); font-size:11px; display:block; margin-top:5px;">+ Kelola Daftar Akun Fanpage</a>
   </div>
   
   <div class="form-group">
@@ -126,7 +137,7 @@ function submitForm() {
   say(AGENTS[1], isNow ? "Menerima perintah upload instan!" : "Menyusun jadwal cron job baru.");
 }
 
-/* ============ 1. PENGATURAN AGENT DIVISI AFFILIATE ============ */
+/* ============ 1. PENGATURAN AGENT ============ */
 const AGENTS = [
   { name:"Sari (Copywriter)", role:"Manajer Konten", color:0x3ddcc5, desk:[0, -2], route:[[-2,-2],[-2,1],[3,1]],
     outfit:0x8a8f9c, bottom:0x6a6f7c, style:"cepol",
@@ -134,20 +145,19 @@ const AGENTS = [
   { name:"Budi (Uploader)", role:"Admin Bot & Jadwal", color:0xff7a59, desk:[-4, 2], route:[[-2,2],[-2,1],[3,1]], outfit:0xff9a6c, bottom:0x5b7fb5, hair:0x2b1d14,
     tasks:["Menjalankan Cron Job antrean", "Push video ke Fanpage FB", "Memeriksa status publikasi"] },
   { name:"Citra (Account)", role:"Manajer Fanpage", color:0xc6b8ea, desk:[-4, -2], route:[[-2,-2],[-2,1],[3,1]], outfit:0xa8dcc8, bottom:0x4a5a8a,
-    tasks:["Mengecek kesehatan 5 Fanpage", "Menyematkan Link Redirect di komentar", "Mengelola daftar akun kelola"] }
+    tasks:["Mengecek kesehatan 5 Fanpage", "Menyematkan Link Redirect", "Mengelola daftar akun"] }
 ];
-const BOARD = [4.5, 0.3];
 
-/* ============ 2. OTAK AGENT (Simulasi) ============ */
+/* ============ 2. OTAK AGENT ============ */
 async function agentThink(agent, task) {
   await new Promise(r => setTimeout(r, 1500));
   return "Selesai: " + task;
 }
 
-/* ============ 3. SCENE 3D TEMA KANTOR MODERN ============ */
+/* ============ 3. SCENE & KANTOR 3D ============ */
 const host = document.getElementById("scene");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1e36); // Background lebih gelap agar kontras
+scene.background = new THREE.Color(0x1a1e36);
 const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 120);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -158,7 +168,7 @@ host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9a7a, 0.7));
 const sun = new THREE.DirectionalLight(0xfff0d4, 0.85);
 sun.position.set(-9, 18, 11); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0006;
+sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left:-15, right:15, top:15, bottom:-15, near:1, far:60 });
 scene.add(sun);
 
@@ -169,19 +179,14 @@ function box(w,h,d,c,x,y,z){
   m.position.set(x,y,z); m.castShadow = m.receiveShadow = true; scene.add(m); return m;
 }
 
-function cyl(r,h,c,x,y,z){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,18),smooth(c)); m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; scene.add(m); return m; }
-function plant(x,z,k=1){ cyl(.22*k,.35*k,0xc9835a,x,.17*k,z); const l=new THREE.Mesh(new THREE.SphereGeometry(.42*k,12,10),smooth(0x62b36a)); l.position.set(x,.75*k,z); l.scale.y=1.2; l.castShadow=true; scene.add(l); }
-
-// Lantai Khusus Divisi Affiliate
+// Lantai Khusus & Dinding
 box(14,.2,10,0xe8c594,0,-.1,0); 
-
-// Dinding Ruangan Besar (Divisi Khusus)
 const WALL_COLOR = 0xcfe6e2;
 function wall(x1,z1,x2,z2,h,c=WALL_COLOR){
   const horiz = z1===z2, len = Math.abs(horiz? x2-x1 : z2-z1);
   const cx=(x1+x2)/2, cz=(z1+z2)/2;
   box(horiz?len:.2, h, horiz?.2:len, c, cx, h/2, cz);
-  box(horiz?len:.26, .06, horiz?.26:len, 0x4a5482, cx, h+.03, cz); // lis atas gelap
+  box(horiz?len:.26, .06, horiz?.26:len, 0x4a5482, cx, h+.03, cz); 
 }
 function glass(x1,z1,x2,z2,h){
   const horiz=z1===z2, len=Math.abs(horiz?x2-x1:z2-z1), cx=(x1+x2)/2, cz=(z1+z2)/2;
@@ -189,45 +194,34 @@ function glass(x1,z1,x2,z2,h){
   m.material.setValues({transparent:true,opacity:.4}); m.castShadow=false;
   box(horiz?len:.12,.06,horiz?.12:len,0xffffff,cx,h+.03,cz);
 }
+wall(-7,-5, 7,-5, 2.5); wall(-7,-5, -7,5, 2.5); wall(-7,5, -3,5, 2.5); 
+glass(-3,5, 7,5, 2.5); wall(7,-5, 7,-1, 2.5); glass(7,-1, 7,5, 2.5);  
 
-// Membangun ruangan kotak besar
-wall(-7,-5, 7,-5, 2.5); // Tembok belakang
-wall(-7,-5, -7,5, 2.5); // Tembok kiri
-wall(-7,5, -3,5, 2.5);  // Tembok depan (kiri)
-glass(-3,5, 7,5, 2.5);  // Kaca depan (kanan)
-wall(7,-5, 7,-1, 2.5);  // Tembok kanan
-glass(7,-1, 7,5, 2.5);  // Kaca kanan
-
-// Papan Dashboard Analitik Fanpage di tembok kanan
-box(.1, 1.4, 2.4, 0x1e2342, 6.9, 1.3, -2.5); // Layar gelap
-box(.11, 1.2, 2.2, 0x3ddcc5, 6.9, 1.3, -2.5).material.setValues({emissive:0x3ddcc5, emissiveIntensity:0.3}); // Grafis nyala
-
-// Rak Server / Mesin Bot Uploader di tembok kiri
+// Papan Dashboard & Server Bot
+box(.1, 1.4, 2.4, 0x1e2342, 6.9, 1.3, -2.5);
+box(.11, 1.2, 2.2, 0x3ddcc5, 6.9, 1.3, -2.5).material.setValues({emissive:0x3ddcc5, emissiveIntensity:0.3});
 box(1.2, 2, .8, 0x4a5482, -6.2, 1, -4);
-box(.8, .1, .6, 0x14172b, -6.2, 1.5, -4); // Celah server
-box(.1, .05, .05, 0xffb454, -5.8, 1.5, -4).material.setValues({emissive:0xffb454}); // Lampu indikator bot
+box(.8, .1, .6, 0x14172b, -6.2, 1.5, -4); 
+box(.1, .05, .05, 0xffb454, -5.8, 1.5, -4).material.setValues({emissive:0xffb454}); 
 
-// Dekorasi Tanaman
+// Tanaman & Meja Tiap Agent
+function cyl(r,h,c,x,y,z){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,18),smooth(c)); m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; scene.add(m); return m; }
+function plant(x,z,k=1){ cyl(.22*k,.35*k,0xc9835a,x,.17*k,z); const l=new THREE.Mesh(new THREE.SphereGeometry(.42*k,12,10),smooth(0x62b36a)); l.position.set(x,.75*k,z); l.scale.y=1.2; l.castShadow=true; scene.add(l); }
 plant(-6, 4, 1.2); plant(6, 4, 1.2); plant(-6,-4, 1.5);
 
-// Meja tiap agent (Setup PC Ganda untuk produktivitas)
 AGENTS.forEach(a => {
   const [x,z] = a.desk;
-  box(2.2,.15,1.1,0xfcfcfc,x,.9,z); // Meja putih modern
+  box(2.2,.15,1.1,0xfcfcfc,x,.9,z);
   box(.12,.9,.12,0x333333,x-.9,.45,z-.4); box(.12,.9,.12,0x333333,x+.9,.45,z-.4);
   box(.12,.9,.12,0x333333,x-.9,.45,z+.4); box(.12,.9,.12,0x333333,x+.9,.45,z+.4);
-  
-  // Monitor Ganda
   box(.9,.6,.08,0x0e1020,x-0.5,1.45,z-.3).rotation.y = Math.PI/12;
   box(.9,.6,.08,0x0e1020,x+0.5,1.45,z-.3).rotation.y = -Math.PI/12;
-  
   const glow = box(.8,.5,.02,a.color,x-0.5,1.45,z-.26);
   glow.material.emissive = new THREE.Color(a.color); glow.material.emissiveIntensity = .5; glow.rotation.y = Math.PI/12;
-  
   box(2.6,.04,1.8,a.color,x,.03,z+.5).material.setValues({transparent:true,opacity:.3});
 });
 
-// Karakter 3D
+// Pembuatan Karakter 3D (disederhanakan untuk kode)
 function ball(r, c, x, y, z, sx=1, sy=1, sz=1){
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), smooth(c));
   m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.castShadow = true; return m;
@@ -245,19 +239,10 @@ function makeAgent(a){
   a.armL = mk(-.3,1.15,top,.5,.06); a.armR = mk(.3,1.15,top,.5,.06);
   a.legL = mk(-.1,.6,bot,.52,.085); a.legR = mk(.1,.6,bot,.52,.085);
   [a.armL,a.armR].forEach(p => p.add(ball(.07,skin,0,-.52,0)));
-  [a.legL,a.legR].forEach(p => p.add(ball(.1,0x333,0,-.54,.04,1,.6,1.4))); // sepatu gelap
-  [-1,1].forEach(s => {
-    g.add(ball(.05,0x1b1420,s*.13,1.57,.315));
-    g.add(ball(.055,0xf5a3a3,s*.2,1.45,.28,1,.7,.5));
-  });
-  g.add(ball(.035,0xd97a7a,0,1.43,.32,1.6,.7,.5));
+  [a.legL,a.legR].forEach(p => p.add(ball(.1,0x333,0,-.54,.04,1,.6,1.4)));
   const cap = new THREE.Mesh(new THREE.SphereGeometry(.375, 20, 14, 0, Math.PI*2, 0, Math.PI*.56), smooth(a.hair || 0x3a2a22));
   cap.position.set(0, 1.58, -.06); cap.castShadow = true; g.add(cap);
   
-  const dia = new THREE.Mesh(new THREE.OctahedronGeometry(.16, 0), new THREE.MeshStandardMaterial({
-    color:a.color, emissive:a.color, emissiveIntensity:.7, roughness:.3 }));
-  dia.scale.y = 1.5; dia.position.y = 2.4; g.add(dia); a.diamond = dia;
-
   g.position.set(a.desk[0], 0, a.desk[1] + 1.1); scene.add(g);
   a.mesh = g; a.body = torso; a.state = "work"; a.timer = 2 + Math.random()*2;
   a.home = new THREE.Vector3(a.desk[0], 0, a.desk[1] + 1.1); a.path = [];
@@ -266,28 +251,114 @@ function makeAgent(a){
 }
 AGENTS.forEach(makeAgent);
 
-/* ============ 4. KAMERA INTERAKTIF ============ */
-let yaw = 0.5, pitch = 0.7, dist = 22, drag = null;
-const pts = new Map();
-renderer.domElement.addEventListener("pointerdown", e => { drag = {x:e.clientX, y:e.clientY}; pts.set(e.pointerId, e); });
-addEventListener("pointerup", e => { drag = null; pts.delete(e.pointerId); });
-addEventListener("pointermove", e => {
-  if (!drag) return;
-  yaw -= (e.clientX - drag.x) * 0.006;
-  pitch = Math.min(1.2, Math.max(.15, pitch + (e.clientY - drag.y) * 0.004));
-  drag = {x:e.clientX, y:e.clientY};
+/* ============ 4. LOGO FACEBOOK MELAYANG & INTERAKTIF ============ */
+// 1. Buat tekstur logo FB menggunakan HTML Canvas
+function createFBTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  // Background Biru FB
+  ctx.fillStyle = "#1877F2";
+  ctx.beginPath(); ctx.roundRect(0, 0, 256, 256, 40); ctx.fill();
+  // Huruf 'f' putih
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 200px Arial, sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("f", 145, 145); 
+  return new THREE.CanvasTexture(canvas);
+}
+// 2. Buat objek 3D kotak dengan tekstur FB
+const fbGeo = new THREE.BoxGeometry(2, 2, 0.3);
+const fbMat = new THREE.MeshStandardMaterial({ map: createFBTexture(), roughness:0.2, metalness:0.1 });
+const fbLogo = new THREE.Mesh(fbGeo, fbMat);
+fbLogo.position.set(0, 6, 0); // Melayang di atas (Y = 6)
+scene.add(fbLogo);
+
+// 3. Logika Raycaster (Klik/Tap Logo)
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let startClickPos = null;
+
+// Deteksi saat mouse/jari menekan layar
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  startClickPos = { x: e.clientX, y: e.clientY };
 });
-renderer.domElement.addEventListener("wheel", e => { dist = Math.min(40, Math.max(12, dist + e.deltaY*.03)); });
+
+// Deteksi saat dilepas (memastikan pengguna mengklik, bukan menggeser layar)
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (startClickPos) {
+    const dx = e.clientX - startClickPos.x;
+    const dy = e.clientY - startClickPos.y;
+    // Jika pergerakan kurang dari 10px, anggap sebagai "Klik"
+    if (Math.sqrt(dx*dx + dy*dy) < 10) {
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObject(fbLogo);
+      if (intersects.length > 0) {
+        document.getElementById('form-panel').classList.add('open');
+      }
+    }
+  }
+  startClickPos = null;
+});
+
+// Ubah kursor jadi "pointer" (tangan) saat mengarahkan mouse ke logo
+renderer.domElement.addEventListener('pointermove', (e) => {
+  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObject(fbLogo);
+  document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+});
+
+
+/* ============ 5. KAMERA & KONTROL ZOOM ============ */
+let yaw = 0.5, pitch = 0.7, dist = 28, drag = null;
+let prevPinchDist = null;
+const pts = new Map();
+
+function zoomCam(amount) {
+  dist = Math.min(60, Math.max(12, dist + amount));
+}
+
+renderer.domElement.addEventListener("pointerdown", e => { pts.set(e.pointerId, e); drag = {x:e.clientX, y:e.clientY}; });
+addEventListener("pointerup", e => { 
+  pts.delete(e.pointerId); 
+  if(pts.size < 2) prevPinchDist = null;
+  if(pts.size === 1) drag = { x: Array.from(pts.values())[0].clientX, y: Array.from(pts.values())[0].clientY };
+  else drag = null;
+});
+addEventListener("pointermove", e => {
+  if (!pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, e);
+  
+  // Deteksi Cubit Layar (Pinch to Zoom) untuk HP
+  if (pts.size === 2) {
+    const arr = Array.from(pts.values());
+    const d = Math.hypot(arr[0].clientX - arr[1].clientX, arr[0].clientY - arr[1].clientY);
+    if (prevPinchDist !== null) zoomCam((prevPinchDist - d) * 0.1); // Zoom in/out via pinch
+    prevPinchDist = d;
+  } 
+  // Deteksi Geser (Putar Kamera)
+  else if (drag && pts.size === 1) {
+    yaw -= (e.clientX - drag.x) * 0.006;
+    pitch = Math.min(1.2, Math.max(.15, pitch + (e.clientY - drag.y) * 0.004));
+    drag = {x:e.clientX, y:e.clientY};
+  }
+});
+// Deteksi Scroll Mouse (Zoom)
+renderer.domElement.addEventListener("wheel", e => { zoomCam(e.deltaY * 0.03); });
 
 function resize(){
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w,h); camera.aspect = w/h;
-  dist = Math.max(dist, w < h ? 30 : 22);
   camera.updateProjectionMatrix();
 }
 addEventListener("resize", resize); resize();
 
-/* ============ 5. LOG & GELEMBUNG ============ */
+
+/* ============ 6. LOG & GELEMBUNG ============ */
 const logEl = document.getElementById("log");
 function log(name, text){
   const p = document.createElement("p"); p.innerHTML = "<b></b> ";
@@ -299,68 +370,76 @@ function say(a, text, ms=3000){
   clearTimeout(a.bt); a.bt = setTimeout(() => a.bubble.classList.remove("on"), ms);
 }
 
-/* ============ 6. LOOP ANIMASI ============ */
+
+/* ============ 7. LOOP ANIMASI UTAMA ============ */
 const clock = new THREE.Clock();
 function setPath(a, pts){ a.path = pts.map(p => new THREE.Vector3(p[0], 0, p[1])); }
-function update(a, dt){
-  if (a.state === "work") {
-    a.body.rotation.z = Math.sin(clock.elapsedTime*6)*.03;
-    a.timer -= dt;
-    if (a.timer <= 0) {
-      const task = a.tasks[Math.floor(Math.random() * a.tasks.length)];
-      say(a, task + "...");
-      a.state = "think";
-      agentThink(a, task).then(res => {
-        a.result = res; a.state = "toBoard";
-        setPath(a, a.route);
-      });
-    }
-  } else if (a.state === "toBoard" || a.state === "toDesk") {
-    const d = a.path[0].clone().sub(a.mesh.position); d.y = 0;
-    if (d.length() < .1) {
-      a.path.shift();
-      if (!a.path.length) {
-        if (a.state === "toBoard") {
-          log(a.name, a.result);
-          a.state = "report"; a.timer = 2;
-        } else { a.state = "work"; a.timer = 4 + Math.random()*3; }
-      }
-    } else {
-      d.normalize(); a.mesh.position.addScaledVector(d, dt*2.5);
-      a.mesh.rotation.y = Math.atan2(d.x, d.z);
-      a.body.rotation.z = Math.sin(clock.elapsedTime*12)*.08;
-    }
-  } else if (a.state === "report") {
-    a.timer -= dt;
-    if (a.timer <= 0) { a.state = "toDesk"; setPath(a, a.route.slice(0,-1).reverse().concat([[a.home.x, a.home.z]])); }
-  }
-}
 const v = new THREE.Vector3();
+
 function loop(){
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), .05);
+  const t = clock.elapsedTime;
+  
+  // Animasi Logo FB Melayang & Berputar lambat
+  fbLogo.position.y = 5.5 + Math.sin(t * 2) * 0.3;
+  fbLogo.rotation.y += dt * 0.5;
+
+  // Animasi Agent Bekerja
   AGENTS.forEach(a => {
-    update(a, dt);
-    a.diamond.rotation.y += dt*1.5;
-    a.diamond.position.y = 2.4 + Math.sin(clock.elapsedTime*2)*.08;
-    a.mesh.position.y = (a.state==="toBoard"||a.state==="toDesk") ? Math.abs(Math.sin(clock.elapsedTime*10))*.07 : 0;
-    const wk = (a.state==="toBoard"||a.state==="toDesk"), t = clock.elapsedTime;
+    if (a.state === "work") {
+      a.body.rotation.z = Math.sin(t*6)*.03;
+      a.timer -= dt;
+      if (a.timer <= 0) {
+        const task = a.tasks[Math.floor(Math.random() * a.tasks.length)];
+        say(a, task + "...");
+        a.state = "think";
+        agentThink(a, task).then(res => {
+          a.result = res; a.state = "toBoard";
+          setPath(a, a.route);
+        });
+      }
+    } else if (a.state === "toBoard" || a.state === "toDesk") {
+      const d = a.path[0].clone().sub(a.mesh.position); d.y = 0;
+      if (d.length() < .1) {
+        a.path.shift();
+        if (!a.path.length) {
+          if (a.state === "toBoard") { log(a.name, a.result); a.state = "report"; a.timer = 2; } 
+          else { a.state = "work"; a.timer = 4 + Math.random()*3; }
+        }
+      } else {
+        d.normalize(); a.mesh.position.addScaledVector(d, dt*2.5);
+        a.mesh.rotation.y = Math.atan2(d.x, d.z);
+        a.body.rotation.z = Math.sin(t*12)*.08;
+      }
+    } else if (a.state === "report") {
+      a.timer -= dt;
+      if (a.timer <= 0) { a.state = "toDesk"; setPath(a, a.route.slice(0,-1).reverse().concat([[a.home.x, a.home.z]])); }
+    }
+    
+    a.mesh.position.y = (a.state==="toBoard"||a.state==="toDesk") ? Math.abs(Math.sin(t*10))*.07 : 0;
+    const wk = (a.state==="toBoard"||a.state==="toDesk");
     const sw = wk ? Math.sin(t*12)*.6 : 0;
     if (!wk) a.mesh.rotation.y = Math.PI;
     const ty = a.state==="work" ? -1.15 + Math.sin(t*16)*.15 : 0;
     a.armL.rotation.x = wk ? sw : ty;
     a.armR.rotation.x = wk ? -sw : (a.state==="work" ? ty + Math.sin(t*16+2)*.15 : 0);
     a.legL.rotation.x = -sw; a.legR.rotation.x = sw;
+    
+    // Bubble UI Posisi
     v.copy(a.mesh.position); v.y = 2.9; v.project(camera);
     a.bubble.style.left = ((v.x+1)/2*innerWidth) + "px";
     a.bubble.style.top  = ((1-v.y)/2*innerHeight) + "px";
   });
+  
+  // Update Posisi Kamera
   camera.position.set(Math.sin(yaw)*Math.cos(pitch)*dist, Math.sin(pitch)*dist, Math.cos(yaw)*Math.cos(pitch)*dist);
   camera.lookAt(0, 1, 0);
   renderer.render(scene, camera);
 }
-log("Sistem", "Server Bot Auto Uploader aktif.");
-log("Sistem", "Karyawan divisi siap menerima tugas.");
+
+log("Sistem", "Logo Facebook melayang telah diaktifkan.");
+log("Petunjuk", "Klik Logo FB atau tombol form untuk memberi tugas.");
 loop();
 </script>
 </body>
