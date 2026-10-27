@@ -1,115 +1,181 @@
-import os
+"""Bot Auto Uploader FB Reels (versi perbaikan).
+Dijalankan GitHub Actions: membaca antrean di folder queue/, mengunggah tugas yang sudah
+waktunya ke fanpage yang dipilih, memberi komentar pertama, lalu menyimpan status ke repo."""
+import glob, json, os, re, subprocess, tempfile, time
+from datetime import datetime, timezone
+
 import requests
-import json
-import re
-import time
 
-# --- PENGATURAN ---
-ALL_SECRETS = json.loads(os.environ.get("ALL_SECRETS", "{}"))
-GITHUB_TOKEN = ALL_SECRETS.get("GH_TOKEN")
-REPO = "picmixsix/kantor-ai" # Repo Anda
+VER = os.getenv("FB_VER", "v25.0")
+G = f"https://graph.facebook.com/{VER}"
+MAKS_PER_RUN = 3
 
-def ambil_pages():
-    with open("pages.json", "r") as f:
-        return json.load(f)
+try:
+    ALL = json.loads(os.getenv("ALL_SECRETS") or "{}")
+except ValueError:
+    ALL = {}
+RAHASIA = [v for v in ALL.values() if isinstance(v, str) and len(v) >= 8]
 
-def ambil_antrean():
-    url = f"https://api.github.com/repos/{REPO}/issues?state=open"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    res = requests.get(url, headers=headers)
-    return res.json() if res.status_code == 200 else []
 
-def parsing_tugas(body):
-    match = re.search(r'```json\n(.*?)\n```', body, re.DOTALL)
-    if match:
-        return json.loads(match.group(1))
-    return None
+def redact(teks):
+    teks = str(teks)
+    for s in RAHASIA:
+        teks = teks.replace(s, "***")
+    return teks
 
-def ubah_link_gdrive(link):
-    # Mengubah link GDrive biasa menjadi link direct download
-    file_id = re.search(r'/d/([a-zA-Z0-9_-]+)', link)
-    if file_id:
-        return f"https://drive.google.com/uc?export=download&id={file_id.group(1)}"
-    return link
 
-def upload_reels_fb(page_id, access_token, video_url, deskripsi):
-    print("Memulai inisialisasi upload Reels...")
-    url_init = f"https://graph.facebook.com/v18.0/{page_id}/video_reels"
-    payload_init = {
-        "upload_phase": "start",
-        "access_token": access_token
-    }
-    res_init = requests.post(url_init, data=payload_init).json()
-    
-    if "video_id" not in res_init:
-        print("Gagal inisialisasi:", res_init)
-        return False
-        
-    video_id = res_init["video_id"]
-    upload_url = res_init["upload_url"]
-    
-    print("Mengunggah video dari GDrive ke Facebook...")
-    payload_upload = {
-        "access_token": access_token,
-        "video_file_chunk": video_url # FB bisa menarik langsung dari URL
-    }
-    headers = {"Authorization": f"OAuth {access_token}"}
-    requests.post(upload_url, headers=headers, data=payload_upload)
-    
-    # Tunggu sebentar agar Facebook memproses video
-    time.sleep(10)
-    
-    print("Mempublikasikan Reels...")
-    payload_publish = {
-        "upload_phase": "finish",
-        "video_id": video_id,
-        "video_state": "PUBLISHED",
-        "description": deskripsi,
-        "access_token": access_token
-    }
-    res_pub = requests.post(url_init, data=payload_publish).json()
-    
-    if "success" in res_pub and res_pub["success"]:
-        return True
-    else:
-        print("Gagal publikasi:", res_pub)
-        return False
+def sh(*a, check=True):
+    return subprocess.run(a, check=check, capture_output=True, text=True)
 
-def tutup_issue(issue_num, pesan):
-    url_comment = f"https://api.github.com/repos/{REPO}/issues/{issue_num}/comments"
-    url_close = f"https://api.github.com/repos/{REPO}/issues/{issue_num}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    
-    requests.post(url_comment, headers=headers, json={"body": pesan})
-    requests.patch(url_close, headers=headers, json={"state": "closed"})
+
+def publish(pesan):
+    """Simpan perubahan queue/ ke repo (aman terhadap tabrakan dengan panel)."""
+    sh("git", "add", "queue")
+    if sh("git", "diff", "--cached", "--quiet", check=False).returncode == 0:
+        return
+    sh("git", "commit", "-m", pesan)
+    for _ in range(3):
+        sh("git", "pull", "--rebase", "--autostash", check=False)
+        if sh("git", "push", check=False).returncode == 0:
+            return
+        time.sleep(3)
+
+
+def iso_now():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def drive_id(url):
+    m = re.search(r"/d/([\w-]{10,})", url) or re.search(r"[?&]id=([\w-]{10,})", url)
+    return m.group(1) if m else None
+
+
+def cek(r):
+    try:
+        j = r.json()
+    except ValueError:
+        j = {}
+    if r.status_code >= 400 or "error" in j:
+        e = j.get("error", {})
+        raise RuntimeError(f"Facebook {r.status_code}: {e.get('message', r.text[:200])}")
+    return j
+
+
+def token_halaman(akun):
+    tok = ALL.get(akun["secret_key"])
+    if not tok:
+        raise RuntimeError(f"Secret {akun['secret_key']} belum diisi di GitHub Secrets")
+    try:  # jika token pengguna, ambil token halaman; jika sudah token halaman, pakai apa adanya
+        r = requests.get(f"{G}/{akun['page_id']}", params={"fields": "access_token", "access_token": tok}, timeout=30).json()
+        baru = r.get("access_token")
+        if baru:
+            RAHASIA.append(baru)
+        return baru or tok
+    except requests.RequestException:
+        return tok
+
+
+def caption(j):
+    bagian = [j.get("deskripsi", "").strip()]
+    if j.get("link_di") in ("deskripsi", "keduanya") and j.get("redirect_link"):
+        bagian.append(j["redirect_link"].strip())
+    tagar = " ".join("#" + t.lstrip("#") for t in j.get("tagar", []) if t.strip())
+    if tagar:
+        bagian.append(tagar)
+    return "\n\n".join(b for b in bagian if b)
+
+
+def komentar(j):
+    bagian = [j.get("komentar", "").strip()]
+    if j.get("link_di") in ("komentar", "keduanya") and j.get("redirect_link"):
+        bagian.append(j["redirect_link"].strip())
+    return "\n".join(b for b in bagian if b)
+
+
+def upload(page_id, tok, path, teks, komen):
+    # 1) buka sesi unggah
+    j = cek(requests.post(f"{G}/{page_id}/video_reels", data={"upload_phase": "start", "access_token": tok}, timeout=60))
+    vid, url = j["video_id"], j["upload_url"]
+    # 2) kirim isi file video (bukan URL Drive: Facebook tidak bisa menarik dari Drive)
+    with open(path, "rb") as f:
+        cek(requests.post(url, headers={"Authorization": "OAuth " + tok, "offset": "0",
+                                        "file_size": str(os.path.getsize(path))}, data=f, timeout=900))
+    # 3) terbitkan
+    cek(requests.post(f"{G}/{page_id}/video_reels", data={
+        "upload_phase": "finish", "video_id": vid, "video_state": "PUBLISHED",
+        "description": teks, "access_token": tok}, timeout=60))
+    # 4) tunggu Facebook selesai memproses
+    for _ in range(20):
+        s = requests.get(f"{G}/{vid}", params={"fields": "status", "access_token": tok}, timeout=30).json().get("status", {})
+        if s.get("video_status") == "ready":
+            break
+        if s.get("video_status") == "error":
+            raise RuntimeError("Facebook gagal memproses video: " + redact(json.dumps(s)[:200]))
+        time.sleep(15)
+    # 5) komentar pertama
+    hasil = {"video_id": vid}
+    if komen:
+        hasil["komentar_ok"] = False
+        for _ in range(6):
+            r = requests.post(f"{G}/{vid}/comments", data={"message": komen, "access_token": tok}, timeout=30)
+            if r.status_code < 400:
+                hasil["komentar_ok"] = True
+                break
+            time.sleep(20)
+    return hasil
+
+
+def simpan(p, j, pesan):
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(j, f, ensure_ascii=False, indent=2)
+    publish(pesan)
+
+
+def kerjakan(p, j, pages):
+    petugas = j.get("petugas", "Budi")
+    print(f"{petugas} mengerjakan {os.path.basename(p)}")
+    j.update(status="memproses", mulai=iso_now())
+    simpan(p, j, f"{petugas} mulai mengunggah")  # ditandai dulu agar tidak terunggah dua kali
+    try:
+        akun = pages.get(j.get("fanpage"))
+        if not akun:
+            raise RuntimeError(f"Fanpage '{j.get('fanpage')}' tidak ada di pages.json")
+        fid = drive_id(j.get("gdrive_link", ""))
+        if not fid:
+            raise RuntimeError("Link Google Drive tidak dikenali")
+        import gdown
+        f = os.path.join(tempfile.mkdtemp(), "video.mp4")
+        if not gdown.download(id=fid, output=f, quiet=True) or os.path.getsize(f) < 1000:
+            raise RuntimeError("Gagal mengunduh dari Google Drive. Pastikan aksesnya: siapa saja yang memiliki link")
+        tok = token_halaman(akun)
+        j.update(upload(akun["page_id"], tok, f, caption(j), komentar(j)), status="selesai")
+    except Exception as e:  # noqa: BLE001
+        j["status"] = "gagal"
+        j["galat"] = redact(e)[:300]
+    j["selesai"] = iso_now()
+    simpan(p, j, f"{petugas}: {j['status']}")
+
+
+def main():
+    with open("pages.json", encoding="utf-8") as f:
+        pages = json.load(f)
+    sekarang = datetime.now(timezone.utc)
+    antrian = []
+    for p in sorted(glob.glob("queue/*.json")):
+        try:
+            with open(p, encoding="utf-8") as f:
+                j = json.load(f)
+            waktu = datetime.fromisoformat(j["jadwal"].replace("Z", "+00:00"))
+        except (ValueError, KeyError):
+            continue
+        if j.get("status") == "menunggu" and waktu <= sekarang:
+            antrian.append((waktu, p, j))
+    antrian.sort(key=lambda x: x[0])
+    for _, p, j in antrian[:MAKS_PER_RUN]:
+        kerjakan(p, j, pages)
+    if not antrian:
+        print("Tidak ada tugas yang jatuh tempo.")
+
 
 if __name__ == "__main__":
-    print("Bot Dijalankan...")
-    pages = ambil_pages()
-    issues = ambil_antrean()
-    
-    for issue in issues:
-        tugas = parsing_tugas(issue.get("body", ""))
-        if not tugas:
-            continue
-            
-        fp_kode = tugas.get("fanpage")
-        if fp_kode not in pages:
-            print(f"Fanpage {fp_kode} tidak ditemukan di pages.json")
-            continue
-            
-        akun = pages[fp_kode]
-        token_fb = ALL_SECRETS.get(akun["secret_key"])
-        
-        if not token_fb:
-            print(f"Token untuk {akun['nama']} tidak ditemukan di Secrets!")
-            continue
-            
-        teks_post = f"{tugas['deskripsi']}\n\nLink Produk: {tugas['redirect_link']}"
-        link_video = ubah_link_gdrive(tugas["gdrive_link"])
-        
-        sukses = upload_reels_fb(akun["page_id"], token_fb, link_video, teks_post)
-        
-        if sukses:
-            tutup_issue(issue["number"], "✅ Berhasil upload Reels ke Facebook! Antrean ini ditutup.")
-            print(f"Selesai memproses antrean #{issue['number']}")
+    main()
