@@ -101,26 +101,30 @@ def upload(page_id, tok, path, teks, komen):
         cek(requests.post(url, headers={"Authorization": "OAuth " + tok, "offset": "0",
                                         "file_size": str(os.path.getsize(path))}, data=f, timeout=900))
     # 3) terbitkan
-    cek(requests.post(f"{G}/{page_id}/video_reels", data={
+    fin = cek(requests.post(f"{G}/{page_id}/video_reels", data={
         "upload_phase": "finish", "video_id": vid, "video_state": "PUBLISHED",
         "description": teks, "access_token": tok}, timeout=60))
     # 4) tunggu Facebook selesai memproses
     for _ in range(20):
         s = requests.get(f"{G}/{vid}", params={"fields": "status", "access_token": tok}, timeout=30).json().get("status", {})
-        if s.get("video_status") == "ready":
+        if s.get("video_status") == "ready" or s.get("publishing_phase", {}).get("status") == "complete":
             break
         if s.get("video_status") == "error":
             raise RuntimeError("Facebook gagal memproses video: " + redact(json.dumps(s)[:200]))
         time.sleep(15)
-    # 5) komentar pertama
+    # 5) komentar pertama (coba beberapa alamat tujuan, simpan alasan jika gagal)
     hasil = {"video_id": vid}
     if komen:
+        kandidat = [vid] + [x for x in (fin.get("post_id"), f"{page_id}_{vid}") if x]
         hasil["komentar_ok"] = False
         for _ in range(6):
-            r = requests.post(f"{G}/{vid}/comments", data={"message": komen, "access_token": tok}, timeout=30)
-            if r.status_code < 400:
-                hasil["komentar_ok"] = True
-                break
+            for target in kandidat:
+                r = requests.post(f"{G}/{target}/comments", data={"message": komen, "access_token": tok}, timeout=30)
+                if r.status_code < 400:
+                    hasil["komentar_ok"] = True
+                    hasil.pop("komentar_galat", None)
+                    return hasil
+                hasil["komentar_galat"] = redact(r.text)[:200]
             time.sleep(20)
     return hasil
 
@@ -149,6 +153,8 @@ def kerjakan(p, j, pages):
             raise RuntimeError("Gagal mengunduh dari Google Drive. Pastikan aksesnya: siapa saja yang memiliki link")
         tok = token_halaman(akun)
         j.update(upload(akun["page_id"], tok, f, caption(j), komentar(j)), status="selesai")
+        if j.get("komentar_ok") is False:
+            j["catatan"] = "Reel tayang, tetapi komentar pertama gagal: " + j.get("komentar_galat", "")
     except Exception as e:  # noqa: BLE001
         j["status"] = "gagal"
         j["galat"] = redact(e)[:300]
