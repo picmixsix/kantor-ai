@@ -94,11 +94,7 @@
   <div class="form-group">
     <label>4. Pilih Akun Fanpage</label>
     <select id="fanpageSelect">
-      <option value="fp1">Fanpage 1 (Racun Shopee Indo)</option>
-      <option value="fp2">Fanpage 2 (Promo Diskon Gila)</option>
-      <option value="fp3">Fanpage 3 (Gadget & Elektronik Murah)</option>
-      <option value="fp4">Fanpage 4 (Fashion Wanita OOTD)</option>
-      <option value="fp5">Fanpage 5 (Perabotan Estetik)</option>
+      <option value="">Memuat daftar Fanpage...</option>
     </select>
   </div>
   
@@ -118,6 +114,30 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+/* ============ MEMUAT FANPAGE DINAMIS DARI PAGES.JSON ============ */
+const githubUser = "picmixsix"; 
+const githubRepo = "kantor-ai"; 
+
+async function loadFanpages() {
+  const selectEl = document.getElementById("fanpageSelect");
+  try {
+    const res = await fetch(`https://raw.githubusercontent.com/${githubUser}/${githubRepo}/main/pages.json`);
+    if(!res.ok) throw new Error("Gagal load pages.json");
+    const pages = await res.json();
+    selectEl.innerHTML = "";
+    
+    for (const key in pages) {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = pages[key].nama;
+      selectEl.appendChild(opt);
+    }
+  } catch (err) {
+    selectEl.innerHTML = '<option value="kopi_nusantara">Kopi Nusantara (Default)</option>';
+  }
+}
+loadFanpages();
+
 /* ============ LOGIKA UI FORM & GITHUB ISSUES ============ */
 function toggleTimeInput() {
   const type = document.getElementById("scheduleType").value;
@@ -154,10 +174,6 @@ function submitForm() {
 }
 \`\`\``;
 
-  // Akun GitHub Anda sesuai screenshot
-  const githubUser = "picmixsix"; 
-  const githubRepo = "kantor-ai"; 
-  
   const issueUrl = `https://github.com/${githubUser}/${githubRepo}/issues/new?title=${encodeURIComponent(judul)}&body=${encodeURIComponent(bodyData)}&labels=${label}`;
 
   document.getElementById('form-panel').classList.remove('open');
@@ -177,7 +193,7 @@ const AGENTS = [
   { name:"Budi (Uploader)", role:"Admin Bot & Jadwal", color:0xff7a59, desk:[-4, 2], route:[[-2,2],[-2,1],[3,1]], outfit:0xff9a6c, bottom:0x5b7fb5, hair:0x2b1d14,
     tasks:["Menjalankan Cron Job antrean", "Push video ke Fanpage FB", "Memeriksa status publikasi"] },
   { name:"Citra (Account)", role:"Manajer Fanpage", color:0xc6b8ea, desk:[-4, -2], route:[[-2,-2],[-2,1],[3,1]], outfit:0xa8dcc8, bottom:0x4a5a8a,
-    tasks:["Mengecek kesehatan 5 Fanpage", "Menyematkan Link Redirect", "Mengelola daftar akun"] }
+    tasks:["Mengecek kesehatan Fanpage", "Menyematkan Link Redirect", "Mengelola daftar akun"] }
 ];
 
 /* ============ 2. OTAK AGENT ============ */
@@ -211,7 +227,6 @@ function box(w,h,d,c,x,y,z){
   m.position.set(x,y,z); m.castShadow = m.receiveShadow = true; scene.add(m); return m;
 }
 
-// Lantai Khusus & Dinding
 box(14,.2,10,0xe8c594,0,-.1,0); 
 const WALL_COLOR = 0xcfe6e2;
 function wall(x1,z1,x2,z2,h,c=WALL_COLOR){
@@ -229,14 +244,12 @@ function glass(x1,z1,x2,z2,h){
 wall(-7,-5, 7,-5, 2.5); wall(-7,-5, -7,5, 2.5); wall(-7,5, -3,5, 2.5); 
 glass(-3,5, 7,5, 2.5); wall(7,-5, 7,-1, 2.5); glass(7,-1, 7,5, 2.5);  
 
-// Papan Dashboard & Server Bot
 box(.1, 1.4, 2.4, 0x1e2342, 6.9, 1.3, -2.5);
 box(.11, 1.2, 2.2, 0x3ddcc5, 6.9, 1.3, -2.5).material.setValues({emissive:0x3ddcc5, emissiveIntensity:0.3});
 box(1.2, 2, .8, 0x4a5482, -6.2, 1, -4);
 box(.8, .1, .6, 0x14172b, -6.2, 1.5, -4); 
 box(.1, .05, .05, 0xffb454, -5.8, 1.5, -4).material.setValues({emissive:0xffb454}); 
 
-// Tanaman & Meja Tiap Agent
 function cyl(r,h,c,x,y,z){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,18),smooth(c)); m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; scene.add(m); return m; }
 function plant(x,z,k=1){ cyl(.22*k,.35*k,0xc9835a,x,.17*k,z); const l=new THREE.Mesh(new THREE.SphereGeometry(.42*k,12,10),smooth(0x62b36a)); l.position.set(x,.75*k,z); l.scale.y=1.2; l.castShadow=true; scene.add(l); }
 plant(-6, 4, 1.2); plant(6, 4, 1.2); plant(-6,-4, 1.5);
@@ -253,7 +266,6 @@ AGENTS.forEach(a => {
   box(2.6,.04,1.8,a.color,x,.03,z+.5).material.setValues({transparent:true,opacity:.3});
 });
 
-// Pembuatan Karakter 3D
 function ball(r, c, x, y, z, sx=1, sy=1, sz=1){
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), smooth(c));
   m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.castShadow = true; return m;
@@ -451,8 +463,7 @@ function loop(){
   renderer.render(scene, camera);
 }
 
-log("Sistem", "Logo Facebook melayang telah diaktifkan.");
-log("Petunjuk", "Klik/Tap Logo FB untuk memberi tugas.");
+log("Sistem", "Menghubungkan ke daftar Fanpage...");
 loop();
 </script>
 </body>
