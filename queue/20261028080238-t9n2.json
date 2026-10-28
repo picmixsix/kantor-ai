@@ -24,7 +24,10 @@
   "komentar": "Klik disini 👍",
   "jadwal": "2026-10-28T08:02:38.512Z",
   "petugas": "Budi",
-  "status": "memproses",
+  "status": "selesai",
   "dibuat": "2026-10-28T08:02:38.525Z",
-  "mulai": "2026-10-28T08:02:50+00:00"
+  "mulai": "2026-10-28T08:02:50+00:00",
+  "video_id": "1133329435919931",
+  "komentar_ok": true,
+  "selesai": "2026-10-28T08:03:36+00:00"
 }
