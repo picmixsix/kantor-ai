@@ -1,7 +1,12 @@
 {
-  "kopi_nusantara": {
-    "nama": "Kopi Nusantara",
-    "page_id": "1314307088435921",
-    "secret_key": "FB_TOKEN_KOPI"
-  }
+  "KOPI_NUSANTARA": {"nama": "Kopi Nusantara", "page_id": "1314307088435921", "secret_key": "FB_TOKEN_KOPI"},
+  "MASA_KINI": {"nama": "Masa kini", "page_id": "1347209288472166", "secret_key": "FB_TOKEN_MASA_KINI"},
+  "ALUR_SBB": {"nama": "Alur sbb", "page_id": "1354112421108761", "secret_key": "FB_TOKEN_ALUR_SBB"},
+  "RITME_VIDEO": {"nama": "Ritme Video", "page_id": "1369990332854426", "secret_key": "FB_TOKEN_RITME_VIDEO"},
+  "LOKASARI_PRIDE": {"nama": "Lokasari Pride", "page_id": "1221438421061141", "secret_key": "FB_TOKEN_LOKASARI_PRIDE"},
+  "PART_SELANJUTNYA": {"nama": "Part selanjutnya", "page_id": "1342007275661257", "secret_key": "FB_TOKEN_PART_SELANJUTNYA"},
+  "LIHAT_SELENGKAPNYA": {"nama": "Lihat selengkapnya", "page_id": "1201703239703019", "secret_key": "FB_TOKEN_LIHAT_SELENGKAPNYA"},
+  "CUPLIK_DRAMA": {"nama": "Cuplik Drama", "page_id": "1219055294633214", "secret_key": "FB_TOKEN_CUPLIK_DRAMA"},
+  "LANJUT_PART_2": {"nama": "Lanjut Part 2", "page_id": "1419740597880024", "secret_key": "FB_TOKEN_LANJUT_PART_2"},
+  "PENGAK": {"nama": "Pengak", "page_id": "1273557039174441", "secret_key": "FB_TOKEN_PENGAK"}
 }
