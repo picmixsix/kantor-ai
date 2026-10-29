@@ -1,53 +1,17 @@
-"""Bot Auto Uploader FB Reels (versi perbaikan).
-Dijalankan GitHub Actions: membaca antrean di folder queue/, mengunggah tugas yang sudah
-waktunya ke fanpage yang dipilih, memberi komentar pertama, lalu menyimpan status ke repo."""
-import glob, json, os, re, subprocess, tempfile, time
-from datetime import datetime, timezone
+"""Bot Auto Uploader FB Reels v2.
+Membaca antrean di queue/, mengunggah tugas yang sudah waktunya, mengomentari, mencoba ulang jika gagal,
+menandai tugas yang kedaluwarsa atau macet, lalu menyimpan status ke repo."""
+import glob, os, tempfile, time
+from datetime import datetime, timedelta, timezone
 
 import requests
 
-VER = os.getenv("FB_VER", "v25.0")
-G = f"https://graph.facebook.com/{VER}"
-MAKS_PER_RUN = 3
+from kepatuhan import LABEL
+from lib import RAHASIA, WIB, drive_id, iso_now, muat_json, parse_iso, publish, redact, secret, simpan_json, telegram
 
-try:
-    ALL = json.loads(os.getenv("ALL_SECRETS") or "{}")
-except ValueError:
-    ALL = {}
-RAHASIA = [v for v in ALL.values() if isinstance(v, str) and len(v) >= 8]
-
-
-def redact(teks):
-    teks = str(teks)
-    for s in RAHASIA:
-        teks = teks.replace(s, "***")
-    return teks
-
-
-def sh(*a, check=True):
-    return subprocess.run(a, check=check, capture_output=True, text=True)
-
-
-def publish(pesan):
-    """Simpan perubahan queue/ ke repo (aman terhadap tabrakan dengan panel)."""
-    sh("git", "add", "queue")
-    if sh("git", "diff", "--cached", "--quiet", check=False).returncode == 0:
-        return
-    sh("git", "commit", "-m", pesan)
-    for _ in range(3):
-        sh("git", "pull", "--rebase", "--autostash", check=False)
-        if sh("git", "push", check=False).returncode == 0:
-            return
-        time.sleep(3)
-
-
-def iso_now():
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-def drive_id(url):
-    m = re.search(r"/d/([\w-]{10,})", url) or re.search(r"[?&]id=([\w-]{10,})", url)
-    return m.group(1) if m else None
+G = f"https://graph.facebook.com/{os.getenv('FB_VER', 'v25.0')}"
+MAKS_PER_RUN, MAKS_PER_HARI, MAKS_ULANG, SIMPAN_HARI = 3, 25, 2, 30
+FINAL = ("selesai", "gagal", "ditolak", "kedaluwarsa")
 
 
 def cek(r):
@@ -62,12 +26,11 @@ def cek(r):
 
 
 def token_halaman(akun):
-    tok = ALL.get(akun["secret_key"])
+    tok = secret(akun["secret_key"])
     if not tok:
         raise RuntimeError(f"Secret {akun['secret_key']} belum diisi di GitHub Secrets")
-    try:  # jika token pengguna, ambil token halaman; jika sudah token halaman, pakai apa adanya
-        r = requests.get(f"{G}/{akun['page_id']}", params={"fields": "access_token", "access_token": tok}, timeout=30).json()
-        baru = r.get("access_token")
+    try:  # token pengguna -> ambil token halaman; token halaman -> pakai apa adanya
+        baru = requests.get(f"{G}/{akun['page_id']}", params={"fields": "access_token", "access_token": tok}, timeout=30).json().get("access_token")
         if baru:
             RAHASIA.append(baru)
         return baru or tok
@@ -75,68 +38,85 @@ def token_halaman(akun):
         return tok
 
 
+def _link(j):
+    return f"{LABEL}: {j['redirect_link'].strip()}" if j.get("redirect_link") else ""
+
+
 def caption(j):
     bagian = [j.get("deskripsi", "").strip()]
-    if j.get("link_di") in ("deskripsi", "keduanya") and j.get("redirect_link"):
-        bagian.append(j["redirect_link"].strip())
+    if j.get("link_di") in ("deskripsi", "keduanya"):
+        bagian.append(_link(j))
     tagar = " ".join("#" + t.lstrip("#") for t in j.get("tagar", []) if t.strip())
-    if tagar:
-        bagian.append(tagar)
-    return "\n\n".join(b for b in bagian if b)
+    return "\n\n".join(b for b in bagian + [tagar] if b)
 
 
 def komentar(j):
     bagian = [j.get("komentar", "").strip()]
-    if j.get("link_di") in ("komentar", "keduanya") and j.get("redirect_link"):
-        bagian.append(j["redirect_link"].strip())
+    if j.get("link_di") in ("komentar", "keduanya"):
+        bagian.append(_link(j))
     return "\n".join(b for b in bagian if b)
 
 
+def siapkan_video(j, folder):
+    f = os.path.join(folder, "video.mp4")
+    if j.get("render"):
+        import render_video
+        return render_video.buat(j["render"], f)
+    if j.get("video_url"):
+        with requests.get(j["video_url"], stream=True, timeout=120) as r:
+            r.raise_for_status()
+            with open(f, "wb") as out:
+                for blok in r.iter_content(1 << 20):
+                    out.write(blok)
+        return f
+    fid = drive_id(j.get("gdrive_link", ""))
+    if not fid:
+        raise RuntimeError("Link Google Drive tidak dikenali")
+    import gdown
+    if not gdown.download(id=fid, output=f, quiet=True) or os.path.getsize(f) < 1000:
+        raise RuntimeError("Gagal mengunduh dari Google Drive. Pastikan aksesnya: siapa saja yang memiliki link")
+    return f
+
+
 def upload(page_id, tok, path, teks, komen):
-    # 1) buka sesi unggah
     j = cek(requests.post(f"{G}/{page_id}/video_reels", data={"upload_phase": "start", "access_token": tok}, timeout=60))
     vid, url = j["video_id"], j["upload_url"]
-    # 2) kirim isi file video (bukan URL Drive: Facebook tidak bisa menarik dari Drive)
     with open(path, "rb") as f:
-        cek(requests.post(url, headers={"Authorization": "OAuth " + tok, "offset": "0",
-                                        "file_size": str(os.path.getsize(path))}, data=f, timeout=900))
-    # 3) terbitkan
-    fin = cek(requests.post(f"{G}/{page_id}/video_reels", data={
-        "upload_phase": "finish", "video_id": vid, "video_state": "PUBLISHED",
-        "description": teks, "access_token": tok}, timeout=60))
-    # 4) tunggu Facebook selesai memproses
-    for _ in range(20):
-        s = requests.get(f"{G}/{vid}", params={"fields": "status", "access_token": tok}, timeout=30).json().get("status", {})
-        if s.get("video_status") == "ready" or s.get("publishing_phase", {}).get("status") == "complete":
-            break
-        if s.get("video_status") == "error":
-            raise RuntimeError("Facebook gagal memproses video: " + redact(json.dumps(s)[:200]))
-        time.sleep(15)
-    # 5) komentar pertama (coba beberapa alamat tujuan, simpan alasan jika gagal)
-    hasil = {"video_id": vid}
-    if komen:
-        kandidat = [vid] + [x for x in (fin.get("post_id"), f"{page_id}_{vid}") if x]
-        hasil["komentar_ok"] = False
-        for _ in range(6):
-            for target in kandidat:
-                r = requests.post(f"{G}/{target}/comments", data={"message": komen, "access_token": tok}, timeout=30)
-                if r.status_code < 400:
-                    hasil["komentar_ok"] = True
-                    hasil.pop("komentar_galat", None)
-                    return hasil
-                hasil["komentar_galat"] = redact(r.text)[:200]
-            time.sleep(20)
+        cek(requests.post(url, headers={"Authorization": "OAuth " + tok, "offset": "0", "file_size": str(os.path.getsize(path))}, data=f, timeout=900))
+    fin = cek(requests.post(f"{G}/{page_id}/video_reels", data={"upload_phase": "finish", "video_id": vid, "video_state": "PUBLISHED",
+                                                               "description": teks, "access_token": tok}, timeout=60))
+    hasil = {"video_id": vid}  # mulai dari sini reel dianggap tayang: kegagalan berikutnya tidak boleh memicu unggah ulang
+    try:
+        for _ in range(20):
+            s = requests.get(f"{G}/{vid}", params={"fields": "status", "access_token": tok}, timeout=30).json().get("status", {})
+            if s.get("video_status") == "ready" or s.get("publishing_phase", {}).get("status") == "complete":
+                break
+            if s.get("video_status") == "error":
+                raise RuntimeError("Facebook gagal memproses video: " + redact(str(s))[:150])
+            time.sleep(15)
+        if komen:
+            hasil["komentar_ok"] = False
+            for _ in range(6):
+                for target in [vid] + [x for x in (fin.get("post_id"), f"{page_id}_{vid}") if x]:
+                    r = requests.post(f"{G}/{target}/comments", data={"message": komen, "access_token": tok}, timeout=30)
+                    if r.status_code < 400:
+                        hasil["komentar_ok"] = True
+                        return hasil
+                    hasil["komentar_galat"] = redact(r.text)[:200]
+                time.sleep(20)
+            hasil["catatan"] = "Reel tayang, tetapi komentar pertama gagal: " + hasil.get("komentar_galat", "")
+    except Exception as e:  # noqa: BLE001
+        hasil["catatan"] = "Reel tayang, tetapi langkah lanjutan gagal: " + redact(e)[:150]
     return hasil
 
 
 def simpan(p, j, pesan):
-    with open(p, "w", encoding="utf-8") as f:
-        json.dump(j, f, ensure_ascii=False, indent=2)
+    simpan_json(p, j)
     publish(pesan)
 
 
 def kerjakan(p, j, pages):
-    petugas = j.get("petugas", "Budi")
+    petugas, nama = j.get("petugas", "Budi"), (pages.get(j.get("fanpage")) or {}).get("nama", j.get("fanpage"))
     print(f"{petugas} mengerjakan {os.path.basename(p)}")
     j.update(status="memproses", mulai=iso_now())
     simpan(p, j, f"{petugas} mulai mengunggah")  # ditandai dulu agar tidak terunggah dua kali
@@ -144,41 +124,56 @@ def kerjakan(p, j, pages):
         akun = pages.get(j.get("fanpage"))
         if not akun:
             raise RuntimeError(f"Fanpage '{j.get('fanpage')}' tidak ada di pages.json")
-        fid = drive_id(j.get("gdrive_link", ""))
-        if not fid:
-            raise RuntimeError("Link Google Drive tidak dikenali")
-        import gdown
-        f = os.path.join(tempfile.mkdtemp(), "video.mp4")
-        if not gdown.download(id=fid, output=f, quiet=True) or os.path.getsize(f) < 1000:
-            raise RuntimeError("Gagal mengunduh dari Google Drive. Pastikan aksesnya: siapa saja yang memiliki link")
-        tok = token_halaman(akun)
-        j.update(upload(akun["page_id"], tok, f, caption(j), komentar(j)), status="selesai")
-        if j.get("komentar_ok") is False:
-            j["catatan"] = "Reel tayang, tetapi komentar pertama gagal: " + j.get("komentar_galat", "")
+        video = siapkan_video(j, tempfile.mkdtemp())
+        j.update(upload(akun["page_id"], token_halaman(akun), video, caption(j), komentar(j)), status="selesai")
+        j["selesai"] = iso_now()
+        telegram(f"✅ {petugas}: reel tayang di {nama}\nhttps://www.facebook.com/reel/{j['video_id']}" + (f"\n⚠️ {j['catatan']}" if j.get("catatan") else ""))
     except Exception as e:  # noqa: BLE001
-        j["status"] = "gagal"
-        j["galat"] = redact(e)[:300]
-    j["selesai"] = iso_now()
+        galat, n = redact(e)[:300], int(j.get("percobaan", 0))
+        j["galat"] = galat
+        if n < MAKS_ULANG and not j.get("video_id"):
+            j.update(status="menunggu", percobaan=n + 1, jadwal=(datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(timespec="seconds"))
+        else:
+            j.update(status="gagal", selesai=iso_now())
+            telegram(f"❌ {petugas}: gagal mengunggah ke {nama}\n{galat}")
     simpan(p, j, f"{petugas}: {j['status']}")
 
 
 def main():
-    with open("pages.json", encoding="utf-8") as f:
-        pages = json.load(f)
+    pages = muat_json("pages.json", {})
     sekarang = datetime.now(timezone.utc)
-    antrian = []
-    for p in sorted(glob.glob("queue/*.json")):
-        try:
-            with open(p, encoding="utf-8") as f:
-                j = json.load(f)
-            waktu = datetime.fromisoformat(j["jadwal"].replace("Z", "+00:00"))
-        except (ValueError, KeyError):
-            continue
-        if j.get("status") == "menunggu" and waktu <= sekarang:
-            antrian.append((waktu, p, j))
+    semua = [(p, j) for p in sorted(glob.glob("queue/*.json")) if (j := muat_json(p))]
+    ubah = False
+    for p, j in semua:
+        waktu = parse_iso(j["jadwal"]) if j.get("jadwal") else sekarang
+        if j.get("status") == "menunggu_persetujuan" and waktu < sekarang:
+            j["status"] = "kedaluwarsa"
+            simpan_json(p, j)
+            ubah = True
+        elif j.get("status") == "memproses" and j.get("mulai") and parse_iso(j["mulai"]) < sekarang - timedelta(minutes=60):
+            j.update(status="gagal", galat="Proses terhenti. Periksa manual di Facebook sebelum mengulang, agar tidak ganda.")
+            simpan_json(p, j)
+            telegram(f"❌ Tugas {j.get('id')} terhenti. Periksa manual di Facebook.")
+            ubah = True
+        elif j.get("status") in FINAL and parse_iso(j.get("selesai") or j.get("dibuat") or iso_now()) < sekarang - timedelta(days=SIMPAN_HARI):
+            os.remove(p)
+            ubah = True
+    if ubah:
+        publish("Pembersihan antrean")
+    semua = [(p, j) for p in sorted(glob.glob("queue/*.json")) if (j := muat_json(p))]
+    antrian = [(parse_iso(j["jadwal"]), p, j) for p, j in semua if j.get("status") == "menunggu" and j.get("jadwal") and parse_iso(j["jadwal"]) <= sekarang]
     antrian.sort(key=lambda x: x[0])
-    for _, p, j in antrian[:MAKS_PER_RUN]:
+    dikerjakan = 0
+    for _, p, j in antrian:
+        if dikerjakan >= MAKS_PER_RUN:
+            break
+        sehari = [x for _, x in semua if x.get("fanpage") == j.get("fanpage") and x.get("status") == "selesai"
+                  and x.get("selesai") and parse_iso(x["selesai"]) > sekarang - timedelta(hours=24)]
+        if len(sehari) >= MAKS_PER_HARI:
+            print("Batas harian tercapai untuk", j.get("fanpage"))
+            continue
         kerjakan(p, j, pages)
+        dikerjakan += 1
     if not antrian:
         print("Tidak ada tugas yang jatuh tempo.")
 
