@@ -2,11 +2,11 @@ name: Bot Auto Uploader FB Reels
 
 on:
   schedule:
-    - cron: "*/5 * * * *"      # cek antrean tiap 5 menit (waktu bisa meleset beberapa menit)
-  workflow_dispatch:            # tombol "Run workflow" manual
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
   push:
     branches: [main]
-    paths: ["queue/**"]         # tugas baru dari panel langsung memicu bot
+    paths: ["queue/**"]
 
 permissions:
   contents: write
@@ -18,13 +18,18 @@ concurrency:
 jobs:
   upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install requests gdown
+      - name: Pasang FFmpeg dan font jika belum ada
+        run: |
+          if ! command -v ffmpeg >/dev/null || ! fc-list | grep -qi dejavu; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+          fi
       - name: Atur git
         run: |
           git config user.name "kantor-bot"
