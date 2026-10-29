@@ -46,7 +46,9 @@
     font-size:15px; font-family:inherit; }
   details { margin-bottom:14px; font-size:13px; color:var(--muted); } summary { padding:4px 0; }
   .job { padding:9px 10px; margin-bottom:8px; background:#14172b; border-radius:8px; font-size:12px; line-height:1.5; border-left:4px solid #4a5482; }
-  .job.selesai { border-color:#3ddc84; } .job.gagal { border-color:#ff5f5f; } .job.memproses { border-color:#ffd23f; }
+  .job.menunggu_persetujuan { border-color:#ff5fb0; } .job.ditolak, .job.kedaluwarsa { border-color:#777; opacity:.75; } .job.selesai { border-color:#3ddc84; }
+  .job .aksi { display:flex; gap:8px; margin-top:8px; } .job .aksi button { flex:1; padding:8px; border-radius:6px; border:0; font-weight:700; font-family:inherit; }
+  .job .ok { background:#3ddc84; color:#14172b; } .job .no { background:#ff5f5f; color:#14172b; } .job.gagal { border-color:#ff5f5f; } .job.memproses { border-color:#ffd23f; }
   .job small { color:var(--muted); display:block; word-break:break-word; }
 </style>
 </head>
@@ -136,11 +138,13 @@ const seen = {}; let first = true;
 async function muatJobs(){
   try {
     const list = (await (await gh(`/repos/${U}/${R}/contents/queue?ref=main&t=${Date.now()}`)).json())
-      .filter(f => f.name.endsWith(".json")).sort((a, b) => b.name.localeCompare(a.name)).slice(0, 8);
+      .filter(f => f.name.endsWith(".json")).sort((a, b) => b.name.localeCompare(a.name)).slice(0, 14);
     const jobs = [];
     for (const f of list) {
-      const r = await gh(f.url, { headers:{ Accept:"application/vnd.github.raw+json" } });
-      try { jobs.push(await r.json()); } catch (e) {}
+      try {
+        const r = await (await gh(f.url)).json(), job = JSON.parse(decodeURIComponent(escape(atob(r.content.replace(/\n/g, "")))));
+        job._sha = r.sha; job._path = f.path; jobs.push(job);
+      } catch (e) {}
     }
     const box = $("jobs"); box.innerHTML = "";
     if (!jobs.length) box.innerHTML = "<small style='color:#9aa0c8'>Belum ada tugas.</small>";
@@ -150,13 +154,30 @@ async function muatJobs(){
       d.textContent = `${j.petugas} → ${nama} · ${j.status.toUpperCase()}`;
       const s = document.createElement("small");
       s.textContent = new Date(j.jadwal).toLocaleString("id-ID", { dateStyle:"medium", timeStyle:"short" }) + (j.galat ? " · " + j.galat : "") + (j.catatan ? " · " + j.catatan : "");
-      d.appendChild(s); box.appendChild(d);
+      d.appendChild(s);
+      if (j.status === "menunggu_persetujuan") {
+        const t = document.createElement("small"); t.style.color = "#eef0ff"; t.textContent = (j.deskripsi || "").slice(0, 160) + (j.skor ? "  [skor " + j.skor + "]" : ""); d.appendChild(t);
+        const a = document.createElement("div"); a.className = "aksi";
+        const ok = document.createElement("button"); ok.className = "ok"; ok.textContent = "Setujui"; ok.onclick = () => putuskan(j, "ok");
+        const no = document.createElement("button"); no.className = "no"; no.textContent = "Tolak"; no.onclick = () => putuskan(j, "no");
+        a.append(ok, no); d.appendChild(a);
+      }
+      box.appendChild(d);
       if (seen[j.id] !== j.status) { if (!first) reaksi(j, nama); seen[j.id] = j.status; }
     });
     first = false;
   } catch (e) { if (!/Not Found/i.test(e.message)) log("Sistem", "Gagal memuat status: " + e.message); first = false; }
 }
+async function putuskan(j, aksi){
+  try {
+    const baru = { ...j }; delete baru._sha; delete baru._path; baru.status = aksi === "ok" ? "menunggu" : "ditolak";
+    await gh(`/repos/${U}/${R}/contents/${j._path}`, { method:"PUT", body:JSON.stringify({
+      message:`${j.petugas}: ${baru.status}`, content:b64(JSON.stringify(baru, null, 2)), sha:j._sha }) });
+    log("Sistem", aksi === "ok" ? "Draft disetujui, akan tayang sesuai jadwal." : "Draft ditolak."); muatJobs();
+  } catch (e) { alert("Gagal menyimpan keputusan: " + e.message); }
+}
 function reaksi(j, nama){
+  if (j.status === "menunggu_persetujuan") { const a = agen(j.petugas); say(a, `Ada draft untuk ${nama}, menunggu persetujuan Anda.`, 6000); log(a.n, `Draft ${nama} menunggu persetujuan.`); return; }
   const a = agen(j.petugas);
   if (j.status === "memproses") { say(a, `Mengunggah reel ke ${nama}...`, 6000); log(a.n, `Mulai mengunggah ke ${nama}.`); }
   if (j.status === "selesai") { say(a, "Reel sudah tayang! ✅", 6000); log(a.n, `Reel di ${nama} berhasil tayang.`); }
