@@ -24,7 +24,10 @@
   "komentar": "Klik disini 👍",
   "jadwal": "2026-10-29T12:28:36.749Z",
   "petugas": "Sari",
-  "status": "memproses",
+  "status": "selesai",
   "dibuat": "2026-10-29T12:28:36.769Z",
-  "mulai": "2026-10-29T12:30:14+00:00"
+  "mulai": "2026-10-29T12:30:14+00:00",
+  "video_id": "1870126584127518",
+  "komentar_ok": true,
+  "selesai": "2026-10-29T12:31:02+00:00"
 }
