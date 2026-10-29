@@ -1,0 +1,32 @@
+name: Laporan Mingguan dan Telemetri
+
+on:
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reels
+  cancel-in-progress: false
+
+jobs:
+  laporan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests gdown
+      - name: Atur git
+        run: |
+          git config user.name "kantor-bot"
+          git config user.email "bot@users.noreply.github.com"
+      - name: Buat laporan
+        env:
+          ALL_SECRETS: ${{ toJSON(secrets) }}
+        run: python analis.py
