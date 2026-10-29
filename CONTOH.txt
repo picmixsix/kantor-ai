@@ -1,0 +1,8 @@
+# Salin file ini menjadi stok/NAMA_KUNCI.txt, misalnya stok/KOPI_NUSANTARA.txt (nama kunci sama dengan di pages.json).
+# Satu baris = satu video. Baris berawalan tanda pagar diabaikan. Pisahkan kolom dengan tanda |
+#
+# Video jadi dari Google Drive:
+#   https://drive.google.com/file/d/ID_VIDEO/view | Judul atau topik video | https://shopee.co.id/link-produk (opsional)
+#
+# Video dibuat otomatis dari gambar (maksimal 90 detik, 3 detik per gambar):
+#   gambar: https://drive.google.com/file/d/ID1/view, https://drive.google.com/file/d/ID2/view | Judul | https://shopee.co.id/link-produk
